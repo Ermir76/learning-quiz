@@ -38,3 +38,38 @@ If the label is .jpg, it knows it's a screenshot.
 Finally, if the answer to all previous questions is "no," the manager knows it's not a URL and it's not a file. It correctly concludes: "This must be plain text." It then hands this text directly to Gemini.
 
 
+funkar detta plan? 
+🎯 Mål: Konfigurera multer för file uploads
+
+1. Lägg till multer import
+2. Konfigurera multer med säkra inställningar
+3. Lägg till multer middleware till /api/generateQuiz route
+4. Hantera både files och text i samma endpoint
+
+🎯 Mål: Utöka "manager" funktionen enligt din plan
+
+Nuvarande manager:
+- Kollar om URL → skicka till web scraper
+- Annars → behandla som text
+
+Ny manager ska kolla:
+1. Är det URL? → web scraper
+2. Är det fil? → kolla fil-typ
+   - PDF? → Document AI specialist
+   - Image? → OCR specialist  
+3. Annars → plain text
+
+🎯 Mål: Skapa funktioner för PDF och Image processing
+
+1. Skapa processPDF() funktion
+2. Skapa processImage() funktion
+3. Integrera med Google Document AI (om vi har API key)
+4. Fallback till enkel text extraction
+
+🎯 Mål: Testa alla input-typer
+
+1. Text input (befintlig)
+2. URL input (befintlig) 
+3. PDF upload (ny)
+4. Image upload (ny)
+5. Clipboard paste (ny)
