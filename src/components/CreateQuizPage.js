@@ -1,21 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
+import { DocumentArrowUpIcon, PhotoIcon, XCircleIcon } from './Icons'; // Assuming you have these icons
 
-const CreateQuizPage = ({ setPage, addQuiz, setSelectedCategory, categories, setGeneratedQuiz }) => {
+const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCategory }) => {
   const [text, setText] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [numQuestions, setNumQuestions] = useState(5);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const resetInput = () => {
+    setText('');
+    setSelectedFile(null);
+    if(fileInputRef.current) {
+        fileInputRef.current.value = null;
+    }
+  };
+
+  const handleFileSelected = (file) => {
+    if (file) {
+      resetInput();
+      setSelectedFile(file);
+    }
+  };
+
+  const handleFileChange = (event) => {
+    handleFileSelected(event.target.files[0]);
+  };
+
+  const handlePaste = useCallback((event) => {
+    const items = event.clipboardData.items;
+    for (const index in items) {
+      const item = items[index];
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
+        event.preventDefault();
+        const file = item.getAsFile();
+        const namedFile = new File([file], `pasted-image-${Date.now()}.${file.type.split('/')[1]}`, { type: file.type });
+        handleFileSelected(namedFile);
+        return;
+      }
+    }
+  }, []);
 
   const handleGenerate = async () => {
-    if (!text.trim()) return;
+    if (!selectedFile && !text.trim()) return;
     setIsLoading(true);
+    
+    const formData = new FormData();
+    formData.append('numQuestions', numQuestions);
+
+    if (selectedFile) {
+      formData.append('file', selectedFile);
+    } else {
+      formData.append('topic', text);
+    }
+
     try {
-      // This now calls our simple, text-only backend helper.
       const response = await fetch('/api/generateQuiz', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ topic: text, numQuestions }),
+        body: formData,
       });
 
       if (!response.ok) {
@@ -24,22 +67,16 @@ const CreateQuizPage = ({ setPage, addQuiz, setSelectedCategory, categories, set
       }
 
       const { quiz, category: categoryName } = await response.json();
-      
       const category = categories.find(cat => cat.name === categoryName);
 
       if (!category) {
         throw new Error(`Received an unknown category from the AI: ${categoryName}`);
       }
 
-      const newQuiz = {
-        ...quiz,
-        id: `ai_${new Date().getTime()}`,
-        categoryId: category.id,
-      };
-
-      setGeneratedQuiz(newQuiz); // Pass the new quiz to App.js
-      setSelectedCategory(category); // Still set the category for context
-      setPage('reviewQuiz'); // Go to the new review page
+      const newQuiz = { ...quiz, id: `ai_${new Date().getTime()}`, categoryId: category.id };
+      setGeneratedQuiz(newQuiz);
+      setSelectedCategory(category);
+      setPage('reviewQuiz');
 
     } catch (error) {
       console.error("Error generating quiz:", error);
@@ -49,17 +86,77 @@ const CreateQuizPage = ({ setPage, addQuiz, setSelectedCategory, categories, set
     }
   };
 
+  // Drag and drop handlers
+  const handleDragEnter = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(true); };
+  const handleDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(false); };
+  const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); }; // Necessary to allow drop
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleFileSelected(file);
+    }
+  };
+
+  const canGenerate = !isLoading && (!!selectedFile || text.trim().length > 0);
+
   return (
-    <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-md mx-auto">
-      <h2 className="text-3xl font-bold mb-6 text-center text-slate-200">Create a Quiz</h2>
-      <p className="text-slate-300 mb-6 text-center">Enter a topic, and our AI will generate a quiz for you.</p>
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition bg-slate-700 text-slate-200 placeholder-slate-400 mb-4"
-        placeholder="Paste the text you want to create a quiz from..."
-      />
-      <div className="mb-4">
+    <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
+      <h2 className="text-3xl font-bold mb-4 text-center text-slate-200">Create a Quiz</h2>
+      <p className="text-slate-300 mb-6 text-center">Drop a file, paste an image, click to upload, or just start typing.</p>
+      
+      {/* Unified Input Box */}
+      <div 
+        className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-300 ${isDragOver ? 'border-indigo-500 bg-slate-700' : 'border-slate-600 hover:border-indigo-600'}`}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onClick={() => !selectedFile && fileInputRef.current.click()} // Only trigger if no file is selected
+      >
+        <input ref={fileInputRef} type="file" className="sr-only" onChange={handleFileChange} />
+
+        {selectedFile ? (
+          // File Preview
+          <div className="relative">
+            {selectedFile.type.startsWith('image/') ? (
+              <img src={URL.createObjectURL(selectedFile)} alt="Preview" className="max-h-48 mx-auto rounded-lg" />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full">
+                <DocumentArrowUpIcon className="w-16 h-16 text-slate-400" />
+                <p className="mt-2 text-slate-300 font-semibold">{selectedFile.name}</p>
+              </div>
+            )}
+            <button onClick={resetInput} className="absolute -top-2 -right-2 bg-slate-700 rounded-full p-1 text-white hover:bg-red-500 transition-colors">
+              <XCircleIcon className="w-6 h-6" />
+            </button>
+          </div>
+        ) : (
+          // Placeholder and Textarea
+          <div className="flex flex-col items-center">
+            <PhotoIcon className="w-16 h-16 text-slate-500" />
+            <p className="mt-2 text-slate-400">Click to upload, or drag and drop</p>
+            <p className="text-xs text-slate-500 mt-1">PDF, TXT, PNG, JPG, etc.</p>
+            <div className="relative w-full my-4">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-600"></div></div>
+                <div className="relative flex justify-center"><span className="bg-slate-800 px-2 text-sm text-slate-400">OR</span></div>
+            </div>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onPaste={handlePaste}
+              onClick={(e) => e.stopPropagation()} // Prevent click from bubbling up to the div
+              className="w-full h-24 p-3 border-none rounded-lg bg-slate-700 text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-indigo-600 resize-none"
+              placeholder="Paste a URL, text, or an image..."
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Number of Questions Input */}
+      <div className="my-6">
         <label htmlFor="numQuestions" className="block text-slate-300 text-sm font-bold mb-2">Number of Questions:</label>
         <input
           type="number"
@@ -67,19 +164,23 @@ const CreateQuizPage = ({ setPage, addQuiz, setSelectedCategory, categories, set
           value={numQuestions}
           onChange={(e) => setNumQuestions(Math.max(1, parseInt(e.target.value) || 1))}
           min="1"
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition bg-slate-700 text-slate-200"
+          className="w-full p-3 border border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition bg-slate-700 text-slate-200"
         />
       </div>
-      <button
-        onClick={handleGenerate}
-        disabled={isLoading || !text.trim()}
-        className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300 disabled:bg-slate-600 disabled:cursor-not-allowed"
-      >
-        {isLoading ? 'Generating...' : 'Generate Quiz'}
-      </button>
-       <button onClick={() => setPage('options')} className="mt-4 w-full text-slate-300 hover:text-slate-100 py-2 rounded-lg">
-        Back
-      </button>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col space-y-4">
+        <button
+          onClick={handleGenerate}
+          disabled={!canGenerate}
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300 disabled:bg-slate-600 disabled:cursor-not-allowed flex items-center justify-center"
+        >
+          {isLoading ? 'Generating...' : 'Generate Quiz'}
+        </button>
+        <button onClick={() => setPage('options')} className="w-full text-slate-300 hover:text-slate-100 py-2 rounded-lg transition">
+          Back
+        </button>
+      </div>
     </div>
   );
 };
