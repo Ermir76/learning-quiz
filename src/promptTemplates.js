@@ -45,6 +45,7 @@ Each object in the "questions" array must have the following properties:
 - "type": "multiple-choice".
 - "options": An array of exactly 4 string options.
 - "correctAnswer": The numeric index (0-3) of the correct option.
+- "explanation": A brief explanation of why the correct answer is correct.
 - "learnMoreUrl": A relevant URL for learning more, or an empty string.
 
 Example of the required JSON structure:
@@ -57,6 +58,7 @@ Example of the required JSON structure:
       "type": "multiple-choice",
       "options": ["Berlin", "Madrid", "Paris", "Rome"],
       "correctAnswer": 2,
+      "explanation": "Paris is the capital and most populous city of France.",
       "learnMoreUrl": "https://en.wikipedia.org/wiki/Paris"
     }
   ]
@@ -77,6 +79,7 @@ Each object in the "questions" array must have the following properties:
 - "type": "multiple-choice".
 - "options": An array of exactly 4 string options.
 - "correctAnswer": The numeric index (0-3) of the correct option.
+- "explanation": A brief explanation of why the correct answer is correct. This explanation should also use LaTeX where appropriate.
 - "learnMoreUrl": A relevant URL for learning more, or an empty string.
 
 Example of the required JSON structure:
@@ -84,13 +87,14 @@ Example of the required JSON structure:
   "title": "Quiz on ${topic}",
   "tags": ["Science", "Chemistry"],
   "questions": [
-    { 
+    {
      "text": "What is the chemical formula for water?",
      "type": "multiple-choice",
      "options": ["$H_2O$", "$CO_2$", "$NaCl$", "$CH_4$"],
      "correctAnswer": 0,
+     "explanation": "A molecule of water is composed of two hydrogen atoms and one oxygen atom, hence $H_2O$.",
      "learnMoreUrl": "https://en.wikipedia.org/wiki/Water"
-    } 
+    }
   ]
 }
 `;
@@ -109,6 +113,7 @@ Each object in the "questions" array must have the following properties:
 - "type": "multiple-choice".
 - "options": An array of exactly 4 string options.
 - "correctAnswer": The numeric index (0-3) of the correct option.
+- "explanation": A brief explanation of why the correct answer is correct. This explanation should also use LaTeX where appropriate.
 - "learnMoreUrl": A relevant URL for learning more, or an empty string.
 
 Example of the required JSON structure:
@@ -121,6 +126,7 @@ Example of the required JSON structure:
       "type": "multiple-choice",
       "options": ["$x$", "$2x$", "$x^3$", "$2x^2$"],
       "correctAnswer": 1,
+      "explanation": "The power rule of differentiation states that the derivative of $x^n$ is $nx^{n-1}$. For $x^2$, this is $2x^{2-1} = 2x$.",
       "learnMoreUrl": "https://en.wikipedia.org/wiki/Derivative"
     }
   ]
@@ -145,6 +151,7 @@ const quizGeneratorPrompts = {
     "type": "multiple-choice",
     "options": ["Option A", "Option B", "Option C", "Option D"],
     "correctAnswer": 0,
+    "explanation": "A brief explanation of why the correct answer is correct.",
     "learnMoreUrl": "A relevant URL or an empty string"
   }
 
@@ -153,9 +160,11 @@ const quizGeneratorPrompts = {
     "text": "A question asking the user to write a line of code.",
     "type": "code-input",
     "correctAnswer": "The exact line of code.",
+    "explanation": "A brief explanation of why this is the correct code snippet.",
     "learnMoreUrl": "A relevant URL or an empty string"
   }
-  `,
+  `
+,
 
   // Use the specialized prompts for these categories
   Science: createSciencePrompt,

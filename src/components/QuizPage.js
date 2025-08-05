@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import LaTeXRenderer from './LaTeXRenderer';
 
-const QuizPage = ({ setPage, quiz, setResults }) => {
+const QuizPage = ({ setPage, quiz, setResults, isPreview = false }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [codeInputAnswer, setCodeInputAnswer] = useState('');
@@ -9,24 +9,28 @@ const QuizPage = ({ setPage, quiz, setResults }) => {
   const [userAnswers, setUserAnswers] = useState([]);
 
   const question = quiz.questions[currentQuestionIndex];
+  const isCorrect = selectedAnswer !== null && selectedAnswer === question.correctAnswer;
 
   const handleAnswer = (answerIndex) => {
     if (isAnswered) return;
 
     setSelectedAnswer(answerIndex);
     setIsAnswered(true);
-    const isCorrect = answerIndex === question.correctAnswer;
-    setUserAnswers(ua => [...ua, { type: question.type, questionText: question.text, selected: question.options[answerIndex], correct: question.options[question.correctAnswer], isCorrect, learnMoreUrl: question.learnMoreUrl }]);
+    if (!isPreview) {
+        const isCorrect = answerIndex === question.correctAnswer;
+        setUserAnswers(ua => [...ua, { type: question.type, questionText: question.text, selected: question.options[answerIndex], correct: question.options[question.correctAnswer], isCorrect, explanation: question.explanation, learnMoreUrl: question.learnMoreUrl }]);
+    }
   };
 
   const handleCodeSubmit = () => {
     if (isAnswered || !codeInputAnswer.trim()) return;
 
     setIsAnswered(true);
-    // Normalize by removing all whitespace and making lowercase for robust comparison
-    const normalize = (str) => str.replace(/\s+/g, '').toLowerCase();
-    const isCorrect = normalize(codeInputAnswer) === normalize(question.correctAnswer);
-    setUserAnswers(ua => [...ua, { type: question.type, questionText: question.text, selected: codeInputAnswer, correct: question.correctAnswer, isCorrect, learnMoreUrl: question.learnMoreUrl }]);
+    if (!isPreview) {
+        const normalize = (str) => str.replace(/\s+/g, '').toLowerCase();
+        const isCorrect = normalize(codeInputAnswer) === normalize(question.correctAnswer);
+        setUserAnswers(ua => [...ua, { type: question.type, questionText: question.text, selected: codeInputAnswer, correct: question.correctAnswer, isCorrect, explanation: question.explanation, learnMoreUrl: question.learnMoreUrl }]);
+    }
   };
 
   const handleNext = () => {
@@ -36,9 +40,10 @@ const QuizPage = ({ setPage, quiz, setResults }) => {
       setSelectedAnswer(null);
       setCodeInputAnswer('');
     } else {
-      // Finished quiz
-      setResults(userAnswers);
-      setPage('results');
+      if (!isPreview) {
+        setResults(userAnswers);
+        setPage('results');
+      }
     }
   };
   
@@ -47,12 +52,12 @@ const QuizPage = ({ setPage, quiz, setResults }) => {
           return 'bg-slate-600 hover:bg-slate-500 border-slate-500';
       }
       if (index === question.correctAnswer) {
-          return 'bg-green-700 border-green-800';
+          return 'bg-green-700 border-green-800 scale-105'; // Correct answer stands out
       }
       if (index === selectedAnswer) {
-          return 'bg-red-700 border-red-800';
+          return 'bg-red-700 border-red-800'; // Incorrect answer
       }
-      return 'bg-slate-600 border-slate-500';
+      return 'bg-slate-600 border-slate-500 opacity-50'; // Other options fade out
   }
 
   return (
@@ -71,13 +76,15 @@ const QuizPage = ({ setPage, quiz, setResults }) => {
                         className="w-full h-40 p-4 rounded-lg border-2 bg-slate-900 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-600 font-mono"
                         placeholder="Write your code here..."
                     />
-                    <button
-                        onClick={handleCodeSubmit}
-                        disabled={isAnswered || !codeInputAnswer.trim()}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg text-lg transition disabled:bg-slate-600 disabled:cursor-not-allowed"
-                    >
-                        Submit Answer
-                    </button>
+                    {!isAnswered && (
+                        <button
+                            onClick={handleCodeSubmit}
+                            disabled={!codeInputAnswer.trim()}
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg text-lg transition disabled:bg-slate-600 disabled:cursor-not-allowed"
+                        >
+                            Submit Answer
+                        </button>
+                    )}
                 </div>
             ) : ( // Assumes 'multiple-choice'
                 <div className="space-y-3">
@@ -91,6 +98,12 @@ const QuizPage = ({ setPage, quiz, setResults }) => {
                             <LaTeXRenderer text={option} />
                         </button>
                     ))}
+                </div>
+            )}
+            {isAnswered && (
+                <div className="mt-6 p-4 rounded-lg bg-slate-900/50">
+                    <h3 className="font-bold text-lg mb-2">{isCorrect ? 'Correct!' : 'Incorrect'}</h3>
+                    <p className="text-slate-300"><LaTeXRenderer text={question.explanation} /></p>
                 </div>
             )}
             {isAnswered && (

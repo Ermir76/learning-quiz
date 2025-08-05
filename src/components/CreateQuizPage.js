@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { DocumentArrowUpIcon, PhotoIcon, XCircleIcon } from './Icons'; // Assuming you have these icons
+import { DocumentArrowUpIcon, PhotoIcon, XCircleIcon } from './Icons';
+import LoadingIndicator from './LoadingIndicator'; // Import the new component
 
 const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCategory }) => {
   const [text, setText] = useState('');
@@ -66,14 +67,14 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
         throw new Error(errorData.message || 'Failed to generate quiz.');
       }
 
-      const { quiz, category: categoryName } = await response.json();
+      const { quiz, category: categoryName, modelUsed } = await response.json();
       const category = categories.find(cat => cat.name === categoryName);
 
       if (!category) {
         throw new Error(`Received an unknown category from the AI: ${categoryName}`);
       }
 
-      const newQuiz = { ...quiz, id: `ai_${new Date().getTime()}`, categoryId: category.id };
+      const newQuiz = { ...quiz, id: `ai_${new Date().getTime()}`, categoryId: category.id, modelUsed };
       setGeneratedQuiz(newQuiz);
       setSelectedCategory(category);
       setPage('reviewQuiz');
@@ -101,6 +102,10 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
   };
 
   const canGenerate = !isLoading && (!!selectedFile || text.trim().length > 0);
+
+  if (isLoading) {
+    return <LoadingIndicator />;
+  }
 
   return (
     <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
@@ -175,7 +180,7 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
           disabled={!canGenerate}
           className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300 disabled:bg-slate-600 disabled:cursor-not-allowed flex items-center justify-center"
         >
-          {isLoading ? 'Generating...' : 'Generate Quiz'}
+          Generate Quiz
         </button>
         <button onClick={() => setPage('options')} className="w-full text-slate-300 hover:text-slate-100 py-2 rounded-lg transition">
           Back

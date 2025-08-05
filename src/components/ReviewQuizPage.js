@@ -61,8 +61,14 @@ const ReviewQuizPage = ({ setPage, generatedQuiz, addQuiz, categories, setSelect
       <h2 className="text-3xl font-bold mb-6 text-center">Review Your Quiz</h2>
 
       <div className="mb-4">
-        <h3 className="text-xl font-semibold mb-2">Quiz Title:</h3>
-        <p className="text-slate-300">{quizToReview.title}</p>
+        <label htmlFor="quizTitleInput" className="block text-xl font-semibold mb-2">Quiz Title:</label>
+        <input
+          type="text"
+          id="quizTitleInput"
+          value={quizToReview.title}
+          onChange={(e) => setQuizToReview({ ...quizToReview, title: e.target.value })}
+          className="w-full p-2 rounded-lg bg-slate-700 text-slate-200 border border-slate-600 text-lg"
+        />
       </div>
 
       <div className="mb-4">

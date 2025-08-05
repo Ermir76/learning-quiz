@@ -5,6 +5,8 @@ const { classifierPrompt, quizGeneratorPrompts } = require('../promptTemplates.j
 
 // --- Helper Functions ---
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 function isValidURL(text) {
   try {
     // Use a more robust check for URLs
@@ -16,46 +18,73 @@ function isValidURL(text) {
 }
 
 /**
- * Extracts text from a given URL using BrightData.
+ * Extracts text from a given URL using Apify's Website Content Crawler.
  * @param {string} url The URL to scrape.
  * @returns {Promise<string>} The extracted text content.
  */
 async function extractTextFromURL(url) {
-  const apiToken = process.env.BRIGHTDATA_API_TOKEN;
-  const zoneName = process.env.BRIGHTDATA_ZONE_NAME;
-  
-  if (!apiToken || !zoneName) {
-    throw new Error("Server configuration error: BrightData credentials not found.");
+  const apiToken = process.env.APIFY_API_TOKEN;
+  if (!apiToken) {
+    throw new Error("Server configuration error: Apify API token not found.");
   }
 
-  const endpoint = 'https://api.brightdata.com/request';
-  const payload = { zone: zoneName, url: url, format: 'raw' };
+  const actorId = 'apify/website-content-crawler';
+  const encodedActorId = encodeURIComponent(actorId);
+  const runUrl = `https://api.apify.com/v2/acts/${encodedActorId}/runs?token=${apiToken}`;
 
-  const response = await fetch(endpoint, {
+  const runInput = {
+    startUrls: [{ url: url }],
+    maxCrawlDepth: 0, // Only crawl the specified URL
+    saveHtml: false, // We only need the text
+  };
+
+  // Start the actor run
+  const runResponse = await fetch(runUrl, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiToken}`
-    },
-    body: JSON.stringify(payload)
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(runInput),
   });
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error("BrightData API Error:", errorBody);
-    throw new Error(`BrightData API call failed with status ${response.status}`);
+  if (!runResponse.ok) {
+    const errorBody = await runResponse.text();
+    console.error("Apify API Error (starting run):", errorBody);
+    throw new Error(`Apify API call failed with status ${runResponse.status}`);
   }
 
-  const htmlContent = await response.text();
-  // Basic but effective HTML to text conversion
-  const textContent = htmlContent
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  
-  if (!textContent || textContent.length < 50) { // Check for at least some content
+  const runData = await runResponse.json();
+  const { id: runId, status: initialStatus, defaultDatasetId } = runData.data;
+
+  // Wait for the run to finish
+  let status = initialStatus;
+  const statusUrl = `https://api.apify.com/v2/acts/${encodedActorId}/runs/${runId}?token=${apiToken}`;
+  while (status !== 'SUCCEEDED' && status !== 'FAILED') {
+    await sleep(2000); // Poll every 2 seconds
+    const statusResponse = await fetch(statusUrl);
+    const statusData = await statusResponse.json();
+        if (!statusData.data || typeof statusData.data.status === 'undefined') {
+            console.error("Unexpected Apify status response:", statusData);
+            throw new Error("Apify status API returned an unexpected response format.");
+        }
+        status = statusData.data.status;
+  }
+
+  if (status === 'FAILED') {
+    throw new Error(`Apify actor run failed. Run ID: ${runId}`);
+  }
+
+  // Fetch the results from the dataset
+  const datasetUrl = `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?token=${apiToken}`;
+  const datasetResponse = await fetch(datasetUrl);
+  const datasetItems = await datasetResponse.json();
+
+  if (!datasetItems || datasetItems.length === 0 || !datasetItems[0].text) {
+    throw new Error("Could not extract any text content from the URL using Apify.");
+  }
+
+  // Concatenate text from all results (though there should only be one)
+  const textContent = datasetItems.map(item => item.text).join('\n\n');
+
+  if (textContent.trim().length < 50) {
     throw new Error("Could not extract sufficient text content from the URL.");
   }
 
@@ -63,70 +92,112 @@ async function extractTextFromURL(url) {
 }
 
 /**
- * Calls the multimodal Gemini AI. It can process text prompts, or a combination
- * of a text prompt and a file (image, PDF, etc.).
+ * Calls the multimodal Gemini AI with retry and fallback logic.
  * @param {string} prompt The text prompt to send to the AI.
  * @param {boolean} isQuizGeneration Whether to use generation-specific settings.
  * @param {object|null} file The file object from multer { mimetype, buffer }.
- * @returns {Promise<string>} The raw text response from the AI.
+ * @returns {Promise<{rawText: string, modelUsed: string}>} The raw text response and the model that was used.
  */
 async function callAI(prompt, isQuizGeneration = false, file = null) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("Server configuration error: Gemini API key not found.");
   }
-  
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-  
-  const parts = [{ text: prompt }];
 
-  // If a file is provided, add it to the request payload
-  if (file) {
-    parts.push({
-      inline_data: {
-        mime_type: file.mimetype,
-        data: file.buffer.toString('base64')
+  const primaryModel = 'gemini-2.5-flash';
+  const fallbackModel = 'gemini-1.5-flash';
+
+  const attemptAPICall = async (model) => {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    
+    const parts = [{ text: prompt }];
+
+    if (file) {
+      parts.push({
+        inline_data: {
+          mime_type: file.mimetype,
+          data: file.buffer.toString('base64')
+        }
+      });
+    }
+
+    const payload = {
+      contents: [{ parts: parts }],
+    };
+
+    if (isQuizGeneration) {
+      payload.generationConfig = { 
+          "maxOutputTokens": 8192,
+          "response_mime_type": "application/json"
+      };
+    }
+
+    const maxRetries = 2; // Reduced retries for faster fallback
+    let delay = 1000;
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (!data.candidates || !data.candidates[0].content.parts[0].text) {
+            console.error(`Invalid AI Response from ${model}:`, data);
+            throw new Error(`The AI (${model}) returned an invalid or empty response.`);
+          }
+          console.log(`[32mSuccessfully received response from ${model}.[0m`); // Green text
+          return { rawText: data.candidates[0].content.parts[0].text, modelUsed: model };
+        }
+
+        if (response.status >= 500 && response.status < 600) {
+          console.warn(`[33mAI API call to ${model} failed with status ${response.status}. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})[0m`);
+          if (i < maxRetries - 1) {
+            await sleep(delay);
+            delay *= 2;
+            continue;
+          } else {
+            throw new Error(`AI API call to ${model} failed after ${maxRetries} attempts with status ${response.status}.`);
+          }
+        }
+        
+        const errorBody = await response.text();
+        console.error(`AI API Error from ${model}:`, errorBody);
+        throw new Error(`AI API call to ${model} failed with status ${response.status}`);
+
+      } catch (error) {
+        console.error(`[31mAttempt ${i + 1} for ${model} failed with network error: ${error.message}[0m`);
+        if (i === maxRetries - 1) {
+           throw new Error(`AI API call to ${model} failed after ${maxRetries} attempts: ${error.message}`);
+        }
+        await sleep(delay);
+        delay *= 2;
       }
-    });
-  }
-
-  const payload = {
-    contents: [{ parts: parts }],
+    }
+     throw new Error(`AI API call to ${model} failed definitively after ${maxRetries} attempts.`);
   };
 
-  if (isQuizGeneration) {
-    payload.generationConfig = { 
-        "maxOutputTokens": 8192,
-        "response_mime_type": "application/json" // Request JSON output for quizzes
-    };
+  try {
+    console.log(`
+Attempting API call with primary model: [36m${primaryModel}[0m`);
+    return await attemptAPICall(primaryModel);
+  } catch (primaryError) {
+    console.warn(`[33mPrimary model (${primaryModel}) failed: ${primaryError.message}. Attempting fallback to ${fallbackModel}.[0m`);
+    try {
+      console.log(`Attempting API call with fallback model: [36m${fallbackModel}[0m`);
+      return await attemptAPICall(fallbackModel);
+    } catch (fallbackError) {
+      console.error(`[31mFallback model (${fallbackModel}) also failed: ${fallbackError.message}[0m`);
+      throw new Error(`Both primary and fallback AI models failed. Last error: ${fallbackError.message}`);
+    }
   }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error("AI API Error:", errorBody);
-    throw new Error(`AI API call failed with status ${response.status}`);
-  }
-
-  const data = await response.json();
-  
-  if (!data.candidates || !data.candidates[0].content.parts[0].text) {
-      console.error("Invalid AI Response:", data);
-      throw new Error("The AI returned an invalid or empty response.");
-  }
-
-  const rawText = data.candidates[0].content.parts[0].text;
-  // The response for quiz generation should already be JSON, so no need to strip ```
-  return rawText;
 }
 
 
-// --- Main Handler (The \"Manager\") ---
+// --- Main Handler (The "Manager") ---
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -138,14 +209,17 @@ async function handler(req, res) {
     const files = req.files;
     let plainText;
     let contextSource = "input"; // For logging
+    let modelUsedForTextExtraction = null;
 
     // --- Step 1: Extract Text from the Provided Source ---
     if (files && files.length > 0) {
       const file = files[0];
       contextSource = `the file '${file.originalname}'`;
       console.log(`Input is ${contextSource}. Extracting text with multimodal AI...`);
-      // Use the multimodal AI to extract text from the file
-      plainText = await callAI("Extract all text from the attached document. Focus on the main content.", false, file);
+      const extractionResult = await callAI("Extract all text from the attached document. Focus on the main content.", false, file);
+      plainText = extractionResult.rawText;
+      modelUsedForTextExtraction = extractionResult.modelUsed;
+      console.log(`Text extracted using ${modelUsedForTextExtraction}.`);
 
     } else if (inputText && isValidURL(inputText)) {
       contextSource = `the URL '${inputText}'`;
@@ -167,11 +241,10 @@ async function handler(req, res) {
     console.log(`Successfully extracted text from ${contextSource}. Now generating quiz...`);
 
     // --- Step 2: Generate Quiz from the Extracted Text ---
-    const classificationPrompt = `${classifierPrompt}\n\nUser Topic: "${plainText.substring(0, 1000)}..."`;
-    const rawCategoryName = await callAI(classificationPrompt);
-    console.log(`AI raw category response: "${rawCategoryName}"`); // Log the raw response
+    const classificationPrompt = `${classifierPrompt}\n\nUser Topic: "${plainText.substring(0, 1000)}"..."`;
+    const { rawText: rawCategoryName, modelUsed: modelForCategory } = await callAI(classificationPrompt);
+    console.log(`AI raw category response from ${modelForCategory}: "${rawCategoryName}"`);
 
-    // Normalize the response to match the keys in quizGeneratorPrompts
     const categoryName = rawCategoryName.trim();
 
     if (!quizGeneratorPrompts[categoryName]) {
@@ -181,14 +254,13 @@ async function handler(req, res) {
 
     const generatorPromptFunction = quizGeneratorPrompts[categoryName];
     const generatorPrompt = generatorPromptFunction(plainText, numQuestions);
-    // Call the AI again, this time to generate the JSON quiz
-    const quizJsonString = await callAI(generatorPrompt, true);
     
-    // The AI now returns a JSON string directly, so we just need to parse it.
-    res.status(200).json({ quiz: JSON.parse(quizJsonString), category: categoryName });
+    const { rawText: quizJsonString, modelUsed: modelForQuiz } = await callAI(generatorPrompt, true);
+    
+    res.status(200).json({ quiz: JSON.parse(quizJsonString), category: categoryName, modelUsed: modelForQuiz });
 
   } catch (error) {
-    console.error('Error in handler:', error.message);
+    console.error(`[31mError in handler: ${error.message} [0m`);
     res.status(500).json({ message: `An error occurred: ${error.message}` });
   }
 }
