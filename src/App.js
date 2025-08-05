@@ -13,31 +13,63 @@ function App() {
   const [page, setPage] = useState('welcome');
   const categories = initialCategoriesData;
 
-  const [quizzes, setQuizzes] = useState(() => {
-    const savedQuizzes = localStorage.getItem('quizzes');
-    return savedQuizzes ? JSON.parse(savedQuizzes) : {};
-  });
 
+  const [quizzes, setQuizzes] = useState({});
+
+  // Fetch quizzes from backend on mount
   useEffect(() => {
-    localStorage.setItem('quizzes', JSON.stringify(quizzes));
-  }, [quizzes]);
+    fetch('/api/quizzes')
+      .then(res => res.json())
+      .then(data => {
+        // Convert array to object with id as key for compatibility
+        const quizObj = {};
+        if (data.quizzes) {
+          for (const quiz of data.quizzes) {
+            quizObj[quiz.id] = quiz;
+          }
+        }
+        setQuizzes(quizObj);
+      })
+      .catch(err => {
+        console.error('Failed to fetch quizzes:', err);
+      });
+  }, []);
 
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [results, setResults] = useState([]);
   const [generatedQuiz, setGeneratedQuiz] = useState(null); // New state for the quiz to be reviewed
 
+
+  // Save quiz to backend and update state
   const addQuiz = (newQuiz) => {
-    setQuizzes(prevQuizzes => ({
-      ...prevQuizzes,
-      [newQuiz.id]: newQuiz
-    }));
+    fetch('/api/quizzes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newQuiz)
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.id) {
+          setQuizzes(prevQuizzes => ({
+            ...prevQuizzes,
+            [data.id]: { ...newQuiz, id: data.id }
+          }));
+        }
+      })
+      .catch(err => {
+        console.error('Failed to save quiz:', err);
+      });
   };
 
+
+  // Optionally, implement delete endpoint in backend for full sync
   const deleteQuiz = (quizId) => {
+    // Remove from local state only for now
     const newQuizzes = { ...quizzes };
     delete newQuizzes[quizId];
     setQuizzes(newQuizzes);
+    // TODO: Add backend delete support if needed
   };
 
   const renderPage = () => {
