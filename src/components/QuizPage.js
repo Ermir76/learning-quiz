@@ -1,24 +1,27 @@
 import React, { useState } from 'react';
 import LaTeXRenderer from './LaTeXRenderer';
 
-const QuizPage = ({ setPage, quiz, setResults, isPreview = false }) => {
+const QuizPage = ({ setPage, quiz, setResults, isPreview = false, saveProgress }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [codeInputAnswer, setCodeInputAnswer] = useState('');
   const [isAnswered, setIsAnswered] = useState(false);
   const [userAnswers, setUserAnswers] = useState([]);
+  const [currentAnswerCorrect, setCurrentAnswerCorrect] = useState(false); // Track if current answer is correct
 
   const question = quiz.questions[currentQuestionIndex];
-  const isCorrect = selectedAnswer !== null && selectedAnswer === question.correctAnswer;
+  // Convert correctAnswer to number for multiple-choice questions (stored as string in DB)
+  const correctAnswerIndex = question.type === 'multiple-choice' ? parseInt(question.correctAnswer, 10) : question.correctAnswer;
 
   const handleAnswer = (answerIndex) => {
     if (isAnswered) return;
 
+    const isCorrect = answerIndex === correctAnswerIndex;
     setSelectedAnswer(answerIndex);
+    setCurrentAnswerCorrect(isCorrect);
     setIsAnswered(true);
     if (!isPreview) {
-        const isCorrect = answerIndex === question.correctAnswer;
-        setUserAnswers(ua => [...ua, { type: question.type, questionText: question.text, selected: question.options[answerIndex], correct: question.options[question.correctAnswer], isCorrect, explanation: question.explanation, learnMoreUrl: question.learnMoreUrl }]);
+        setUserAnswers(ua => [...ua, { type: question.type, questionText: question.text, selected: question.options[answerIndex], correct: question.options[correctAnswerIndex], isCorrect, explanation: question.explanation, learnMoreUrl: question.learnMoreUrl }]);
     }
   };
 
@@ -27,8 +30,40 @@ const QuizPage = ({ setPage, quiz, setResults, isPreview = false }) => {
 
     setIsAnswered(true);
     if (!isPreview) {
-        const normalize = (str) => str.replace(/\s+/g, '').toLowerCase();
-        const isCorrect = normalize(codeInputAnswer) === normalize(question.correctAnswer);
+        // More careful normalization for code comparison
+        const normalize = (str) => {
+          return str
+            .trim()                          // Remove leading/trailing whitespace
+            .replace(/\s+/g, ' ')           // Normalize multiple spaces to single space
+            .toLowerCase();                 // Convert to lowercase
+        };
+        
+        const userCode = normalize(codeInputAnswer);
+        const correctCode = normalize(question.correctAnswer);
+        
+        // Primary comparison: exact match after normalization
+        let isCorrect = userCode === correctCode;
+        
+        // Secondary comparison: only if quotes might be the issue
+        if (!isCorrect) {
+          // Normalize quotes only if both contain quotes
+          if (userCode.includes('"') || userCode.includes("'") || correctCode.includes('"') || correctCode.includes("'")) {
+            const normalizeQuotes = (str) => str.replace(/['"]/g, '"');
+            const userWithNormalizedQuotes = normalizeQuotes(userCode);
+            const correctWithNormalizedQuotes = normalizeQuotes(correctCode);
+            isCorrect = userWithNormalizedQuotes === correctWithNormalizedQuotes;
+          }
+        }
+        
+        console.log('Code comparison debug:', {
+          userInput: codeInputAnswer,
+          expectedAnswer: question.correctAnswer,
+          userNormalized: userCode,
+          correctNormalized: correctCode,
+          isCorrect
+        });
+        
+        setCurrentAnswerCorrect(isCorrect);
         setUserAnswers(ua => [...ua, { type: question.type, questionText: question.text, selected: codeInputAnswer, correct: question.correctAnswer, isCorrect, explanation: question.explanation, learnMoreUrl: question.learnMoreUrl }]);
     }
   };
@@ -39,8 +74,18 @@ const QuizPage = ({ setPage, quiz, setResults, isPreview = false }) => {
       setIsAnswered(false);
       setSelectedAnswer(null);
       setCodeInputAnswer('');
+      setCurrentAnswerCorrect(false); // Reset correctness for next question
     } else {
       if (!isPreview) {
+        // Calculate score before saving progress
+        const score = userAnswers.filter(answer => answer.isCorrect).length;
+        const totalQuestions = quiz.questions.length;
+        
+        // Save progress if saveProgress function is provided
+        if (saveProgress && quiz.id) {
+          saveProgress(quiz.id, score, totalQuestions);
+        }
+        
         setResults(userAnswers);
         setPage('results');
       }
@@ -51,7 +96,7 @@ const QuizPage = ({ setPage, quiz, setResults, isPreview = false }) => {
       if (!isAnswered) {
           return 'bg-slate-600 hover:bg-slate-500 border-slate-500';
       }
-      if (index === question.correctAnswer) {
+      if (index === correctAnswerIndex) {
           return 'bg-green-700 border-green-800 scale-105'; // Correct answer stands out
       }
       if (index === selectedAnswer) {
@@ -102,7 +147,7 @@ const QuizPage = ({ setPage, quiz, setResults, isPreview = false }) => {
             )}
             {isAnswered && (
                 <div className="mt-6 p-4 rounded-lg bg-slate-900/50">
-                    <h3 className="font-bold text-lg mb-2">{isCorrect ? 'Correct!' : 'Incorrect'}</h3>
+                    <h3 className="font-bold text-lg mb-2">{currentAnswerCorrect ? 'Correct!' : 'Incorrect'}</h3>
                     <p className="text-slate-300"><LaTeXRenderer text={question.explanation} /></p>
                 </div>
             )}

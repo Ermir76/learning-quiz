@@ -5,7 +5,9 @@
 // This prompt'''s only job is to categorize the user'''s topic.
 // ==================================================================================
 const classifierPrompt = `
-You are a highly accurate content classifier. Your ONLY job is to analyze the user'''s topic and determine which single category it belongs to from the predefined list.
+You are a highly accurate content classifier. Your ONLY job is to analyze the user's topic and determine which single category it belongs to from the predefined list.
+
+**IMPORTANT: The content may be in any language, but analyze and respond in English.**
 
 You MUST choose one category from the following list:
 ["Programming", "Science", "History", "Literature", "Mathematics", "Geography", "Arts", "Sports", "Technology", "Health", "Business", "Other"]
@@ -37,6 +39,8 @@ Category: Other
  * Ensures a consistent JSON structure for multiple-choice questions.
  */
 const createStandardPrompt = (topic, numQuestions) => `
+**IMPORTANT: Generate ALL content in English, regardless of the input language.**
+
 Generate a ${numQuestions}-question multiple-choice quiz about "${topic}".
 The response MUST be a single valid JSON object with a "title", a "questions" array, and a "tags" array.
 The "tags" array should contain relevant keywords based on the topic.
@@ -69,6 +73,8 @@ Example of the required JSON structure:
  * Creates a special prompt for Science (Physics, Chemistry) that uses LaTeX.
  */
 const createSciencePrompt = (topic, numQuestions) => `
+**IMPORTANT: Generate ALL content in English, regardless of the input language.**
+
 Generate a ${numQuestions}-question multiple-choice quiz about the science topic "${topic}".
 You MUST use LaTeX for all scientific notation, including chemical formulas, physical equations, and units. Enclose all LaTeX expressions in ' delimiters. For chemical formulas, write '$H_2O. For physics equations, write '$F = ma.
 IMPORTANT: When using LaTeX expressions in JSON strings, you must escape all backslashes by doubling them. Write '\\frac{1}{2}' instead of '\frac{1}{2}' to ensure valid JSON parsing.
@@ -103,6 +109,8 @@ Example of the required JSON structure:
  * Creates a special prompt for Mathematics that uses LaTeX.
  */
 const createMathPrompt = (topic, numQuestions) => `
+**IMPORTANT: Generate ALL content in English, regardless of the input language.**
+
 Generate a ${numQuestions}-question multiple-choice quiz about the math topic "${topic}".
 You MUST use LaTeX for all mathematical formulas and variables. Enclose all LaTeX expressions in ' delimiters. For example, for x squared, write '$x^2.
 IMPORTANT: When using LaTeX expressions in JSON strings, you must escape all backslashes by doubling them. Write '\\frac{1}{2}' instead of '\frac{1}{2}' to ensure valid JSON parsing.
@@ -140,7 +148,9 @@ Example of the required JSON structure:
 const quizGeneratorPrompts = {
   // Special prompt for Programming to get mixed question types
   Programming: (topic, numQuestions) => `
-  Generate a ${numQuestions}-question quiz about the programming topic "${topic}".
+**IMPORTANT: Generate ALL content in English, regardless of the input language.**
+
+Generate a ${numQuestions}-question quiz about the programming topic "${topic}".
   Create a mix of 'multiple-choice' and 'code-input' question types.
   The response MUST be a single valid JSON object with a "title", a "questions" array, and a "tags" array.
   The "tags" array should contain relevant keywords based on the topic (e.g., "JavaScript", "React", "Data Structures").

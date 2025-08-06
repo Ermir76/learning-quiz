@@ -49,6 +49,50 @@ app.get('/api/quizzes', (req, res) => {
   });
 });
 
+// Save quiz progress/attempt
+app.post('/api/progress', express.json(), (req, res) => {
+  const { quizId, score, totalQuestions } = req.body;
+  
+  if (!quizId || score === undefined || !totalQuestions) {
+    return res.status(400).json({ message: 'Missing required fields: quizId, score, totalQuestions' });
+  }
+  
+  db.saveProgress(quizId, score, totalQuestions, (err, attemptId) => {
+    if (err) {
+      console.error('Error saving progress:', err);
+      return res.status(500).json({ message: 'Failed to save progress.' });
+    }
+    res.status(201).json({ id: attemptId });
+  });
+});
+
+// Get progress for all quizzes
+app.get('/api/progress', (req, res) => {
+  db.getAllProgress((err, progressMap) => {
+    if (err) {
+      console.error('Error fetching progress:', err);
+      return res.status(500).json({ message: 'Failed to fetch progress.' });
+    }
+    res.json({ progress: progressMap });
+  });
+});
+
+// Get progress for a specific quiz
+app.get('/api/progress/:quizId', (req, res) => {
+  const quizId = parseInt(req.params.quizId, 10);
+  if (isNaN(quizId)) {
+    return res.status(400).json({ message: 'Invalid quiz ID.' });
+  }
+  
+  db.getQuizProgress(quizId, (err, progressData) => {
+    if (err) {
+      console.error('Error fetching quiz progress:', err);
+      return res.status(500).json({ message: 'Failed to fetch quiz progress.' });
+    }
+    res.json(progressData);
+  });
+});
+
 // Delete a quiz from the database
 app.delete('/api/quizzes/:id', (req, res) => {
   const quizId = parseInt(req.params.id, 10);

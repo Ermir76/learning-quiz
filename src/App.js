@@ -15,23 +15,28 @@ function App() {
 
 
   const [quizzes, setQuizzes] = useState({});
+  const [progress, setProgress] = useState({});
 
   // Fetch quizzes from backend on mount
   useEffect(() => {
-    fetch('/api/quizzes')
-      .then(res => res.json())
-      .then(data => {
+    // Fetch both quizzes and progress data
+    Promise.all([
+      fetch('/api/quizzes').then(res => res.json()),
+      fetch('/api/progress').then(res => res.json())
+    ])
+      .then(([quizData, progressData]) => {
         // Convert array to object with id as key for compatibility
         const quizObj = {};
-        if (data.quizzes) {
-          for (const quiz of data.quizzes) {
+        if (quizData.quizzes) {
+          for (const quiz of quizData.quizzes) {
             quizObj[quiz.id] = quiz;
           }
         }
         setQuizzes(quizObj);
+        setProgress(progressData.progress || {});
       })
       .catch(err => {
-        console.error('Failed to fetch quizzes:', err);
+        console.error('Failed to fetch data:', err);
       });
   }, []);
 
@@ -85,6 +90,29 @@ function App() {
       });
   };
 
+
+  // Save quiz progress when user completes a quiz
+  const saveProgress = (quizId, score, totalQuestions) => {
+    fetch('/api/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quizId, score, totalQuestions })
+    })
+      .then(res => res.json())
+      .then(() => {
+        // Refresh progress data after saving
+        fetch('/api/progress')
+          .then(res => res.json())
+          .then(data => {
+            setProgress(data.progress || {});
+          })
+          .catch(err => console.error('Failed to refresh progress:', err));
+      })
+      .catch(err => {
+        console.error('Failed to save progress:', err);
+      });
+  };
+
   const renderPage = () => {
     switch (page) {
       case 'welcome':
@@ -95,11 +123,11 @@ function App() {
         // Pass down setSelectedCategory to enable a better user flow
         return <CreateQuizPage setPage={setPage} addQuiz={addQuiz} setSelectedCategory={setSelectedCategory} categories={categories} setGeneratedQuiz={setGeneratedQuiz} />;
       case 'quizCategories':
-        return <QuizCategoriesPage setPage={setPage} setSelectedCategory={setSelectedCategory} categories={categories} quizzes={quizzes} />;
+        return <QuizCategoriesPage setPage={setPage} setSelectedCategory={setSelectedCategory} categories={categories} quizzes={quizzes} progress={progress} />;
       case 'categoryQuizList':
-        return <CategoryQuizListPage setPage={setPage} setSelectedQuiz={setSelectedQuiz} category={selectedCategory} quizzes={quizzes} deleteQuiz={deleteQuiz} />;
+        return <CategoryQuizListPage setPage={setPage} setSelectedQuiz={setSelectedQuiz} category={selectedCategory} quizzes={quizzes} deleteQuiz={deleteQuiz} progress={progress} />;
       case 'quiz':
-        return <QuizPage setPage={setPage} quiz={selectedQuiz} setResults={setResults} />;
+        return <QuizPage setPage={setPage} quiz={selectedQuiz} setResults={setResults} saveProgress={saveProgress} />;
       case 'results':
         return <ResultsPage setPage={setPage} results={results} quiz={selectedQuiz} />;
       case 'reviewQuiz':

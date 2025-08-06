@@ -28,6 +28,16 @@ const initDb = () => {
       learnMoreUrl TEXT,
       FOREIGN KEY (quizId) REFERENCES quizzes(id)
     )`);
+
+    // Add user progress tracking table
+    db.run(`CREATE TABLE IF NOT EXISTS user_progress (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      quizId INTEGER,
+      score INTEGER,
+      totalQuestions INTEGER,
+      attemptedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (quizId) REFERENCES quizzes(id)
+    )`);
   });
 };
 
@@ -50,6 +60,95 @@ db.deleteQuiz = function(quizId, callback) {
       });
     });
   });
+};
+
+/**
+ * Save a quiz attempt/progress to the database
+ * @param {number} quizId - ID of the quiz
+ * @param {number} score - Number of correct answers
+ * @param {number} totalQuestions - Total number of questions
+ * @param {function} callback - Callback with (err, attemptId)
+ */
+db.saveProgress = function(quizId, score, totalQuestions, callback) {
+  db.run(
+    `INSERT INTO user_progress (quizId, score, totalQuestions) VALUES (?, ?, ?)`,
+    [quizId, score, totalQuestions],
+    function(err) {
+      if (err) return callback(err);
+      callback(null, this.lastID);
+    }
+  );
+};
+
+/**
+ * Get progress statistics for a specific quiz
+ * @param {number} quizId - ID of the quiz
+ * @param {function} callback - Callback with (err, progressData)
+ */
+db.getQuizProgress = function(quizId, callback) {
+  db.all(
+    `SELECT score, totalQuestions, attemptedAt FROM user_progress WHERE quizId = ? ORDER BY attemptedAt DESC`,
+    [quizId],
+    (err, attempts) => {
+      if (err) return callback(err);
+      
+      if (!attempts || attempts.length === 0) {
+        return callback(null, { 
+          averageScore: 0, 
+          attempts: 0, 
+          lastAttempt: null,
+          isMastered: false 
+        });
+      }
+
+      // Calculate average percentage
+      const totalPercentage = attempts.reduce((sum, attempt) => {
+        return sum + (attempt.score / attempt.totalQuestions * 100);
+      }, 0);
+      
+      const averageScore = Math.round(totalPercentage / attempts.length);
+      const isMastered = averageScore >= 95;
+      
+      callback(null, {
+        averageScore,
+        attempts: attempts.length,
+        lastAttempt: attempts[0].attemptedAt,
+        isMastered
+      });
+    }
+  );
+};
+
+/**
+ * Get progress for all quizzes
+ * @param {function} callback - Callback with (err, progressMap)
+ */
+db.getAllProgress = function(callback) {
+  db.all(
+    `SELECT 
+      quizId,
+      COUNT(*) as attempts,
+      AVG(CAST(score AS FLOAT) / totalQuestions * 100) as averageScore,
+      MAX(attemptedAt) as lastAttempt
+     FROM user_progress 
+     GROUP BY quizId`,
+    [],
+    (err, results) => {
+      if (err) return callback(err);
+      
+      const progressMap = {};
+      results.forEach(row => {
+        progressMap[row.quizId] = {
+          averageScore: Math.round(row.averageScore || 0),
+          attempts: row.attempts,
+          lastAttempt: row.lastAttempt,
+          isMastered: (row.averageScore || 0) >= 95
+        };
+      });
+      
+      callback(null, progressMap);
+    }
+  );
 };
 /**
  * Save a quiz and its questions to the database

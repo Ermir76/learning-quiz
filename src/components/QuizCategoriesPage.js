@@ -1,12 +1,21 @@
 import React from 'react';
-import { CodeIcon, HistoryIcon, ScienceIcon } from './Icons';
 
-const QuizCategoriesPage = ({ setPage, setSelectedCategory, categories, quizzes }) => (
+const QuizCategoriesPage = ({ setPage, setSelectedCategory, categories, quizzes, progress = {} }) => (
   <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-4xl mx-auto">
     <h2 className="text-3xl font-bold mb-8 text-slate-200">Mina Samlingar</h2>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {categories.map(category => {
-        const quizCount = Object.values(quizzes).filter(q => q.categoryId === category.id).length;
+        const categoryQuizzes = Object.values(quizzes).filter(q => q.categoryId === category.id);
+        const quizCount = categoryQuizzes.length;
+        
+        // Calculate category progress
+        const categoryProgress = categoryQuizzes.map(quiz => progress[quiz.id] || { averageScore: 0, attempts: 0 });
+        const totalAttempts = categoryProgress.reduce((sum, p) => sum + p.attempts, 0);
+        const averageScore = totalAttempts > 0 
+          ? Math.round(categoryProgress.reduce((sum, p) => sum + (p.averageScore * p.attempts), 0) / totalAttempts)
+          : 0;
+        const masteredCount = categoryProgress.filter(p => p.averageScore >= 95).length;
+        
         return (
           <div
             key={category.id}
@@ -21,10 +30,18 @@ const QuizCategoriesPage = ({ setPage, setSelectedCategory, categories, quizzes 
                  <div className="bg-slate-800 p-3 rounded-lg text-slate-300">{category.icon}</div>
                  <h3 className="text-xl font-bold text-slate-200">{category.name}</h3>
               </div>
+              {totalAttempts > 0 && (
+                <div className="text-right">
+                  <div className="text-xs text-slate-400">Avg: {averageScore}%</div>
+                  {masteredCount > 0 && (
+                    <div className="text-xs text-green-400">✓ {masteredCount} mastered</div>
+                  )}
+                </div>
+              )}
             </div>
             <p className="text-slate-300 mb-6 flex-grow">{category.description}</p>
             <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-400">{quizCount} quiz</span>
+                <span className="text-slate-400">{quizCount} quiz{quizCount !== 1 ? 'zes' : ''}</span>
                 <span className="font-semibold text-indigo-400">Öppna →</span>
             </div>
           </div>
