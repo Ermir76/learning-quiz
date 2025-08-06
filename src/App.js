@@ -7,6 +7,7 @@ import CategoryQuizListPage from './components/CategoryQuizListPage';
 import QuizPage from './components/QuizPage';
 import ResultsPage from './components/ResultsPage';
 import ReviewQuizPage from './components/ReviewQuizPage';
+import BugReporter from './components/BugReporter';
 import { initialCategoriesData } from './data/initialData';
 
 function App() {
@@ -141,6 +142,7 @@ function App() {
   return (
     <div className="bg-slate-900 min-h-screen flex items-center justify-center font-sans p-4">
       {renderPage()}
+      <BugReporter />
     </div>
   );
 }

@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const multer = require('multer');
 const generateQuizHandler = require('./src/api/generateQuiz');
 const db = require('./database'); // Import SQLite database
@@ -11,8 +12,9 @@ const db = require('./database'); // Import SQLite database
 const app = express();
 const PORT = 3001;
 
-// This tells our server how to understand JSON data
-app.use(express.json());
+// This tells our server how to understand JSON data with increased limit for screenshots
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage(); // Store files in memory
@@ -108,11 +110,146 @@ app.delete('/api/quizzes/:id', (req, res) => {
   });
 });
 
-// This is for when you build your app for production
-app.use(express.static(path.join(__dirname, 'build')));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// Bug Reporter Routes
+// Get next available issue ID
+app.get('/api/next-issue-id', (req, res) => {
+  console.log('🚀 /api/next-issue-id endpoint HIT! Request received.');
+  const issueMdPath = path.join(__dirname, '../ISSUE.md');
+  
+  try {
+    const issueContent = fs.readFileSync(issueMdPath, 'utf8');
+    const idMatches = issueContent.match(/\*\*ID:\*\* (\d+)/g);
+    
+    if (!idMatches) {
+      return res.json({ nextId: 1 });
+    }
+    
+    const highestId = Math.max(...idMatches.map(match => {
+      const id = match.match(/\d+/)[0];
+      return parseInt(id, 10);
+    }));
+    
+    res.json({ nextId: highestId + 1 });
+  } catch (error) {
+    console.error('Error reading ISSUE.md:', error);
+    res.status(500).json({ error: 'Failed to get next issue ID' });
+  }
 });
+
+// Save bug report (screenshots + append to ISSUE.md)
+app.post('/api/save-bug-report', express.json({limit: '50mb'}), (req, res) => {
+  console.log('🚀 /api/save-bug-report endpoint HIT! Request received.');
+  console.log('🚀 Request body keys:', Object.keys(req.body));
+  console.log('🚀 Headers:', req.headers);
+  
+  const { screenshots, timestamp, url, userAgent } = req.body;
+  
+  if (!screenshots || screenshots.length === 0) {
+    return res.status(400).json({ error: 'No screenshots provided' });
+  }
+  
+  try {
+    // Get next issue ID
+    const issueMdPath = path.join(__dirname, '../ISSUE.md');
+    const issueContent = fs.readFileSync(issueMdPath, 'utf8');
+    const idMatches = issueContent.match(/\*\*ID:\*\* (\d+)/g);
+    
+    let nextId = 1;
+    if (idMatches) {
+      const highestId = Math.max(...idMatches.map(match => {
+        const id = match.match(/\d+/)[0];
+        return parseInt(id, 10);
+      }));
+      nextId = highestId + 1;
+    }
+    
+    // Create screenshots directory if it doesn't exist
+    const screenshotsDir = path.join(__dirname, '../screenshots');
+    if (!fs.existsSync(screenshotsDir)) {
+      fs.mkdirSync(screenshotsDir, { recursive: true });
+    }
+    
+    // Save screenshots with proper naming
+    screenshots.forEach((screenshot, index) => {
+      const base64Data = screenshot.image.replace(/^data:image\/png;base64,/, '');
+      const filename = `issue-${nextId}-screenshot-${index + 1}.png`;
+      const filepath = path.join(screenshotsDir, filename);
+      fs.writeFileSync(filepath, base64Data, 'base64');
+    });
+    
+    // Generate markdown for new issue
+    const today = new Date().toLocaleDateString();
+    let newIssueMarkdown = `\n## Issue Report: [AUTO-GENERATED - PLEASE EDIT TITLE]
+
+**ID:** ${nextId}
+**Status:** Open
+**Date Opened:** ${today}
+
+---
+
+### Problem Description
+
+`;
+    
+    // Add screenshot descriptions
+    screenshots.forEach((screenshot, index) => {
+      newIssueMarkdown += `**Screenshot ${index + 1}:** ${screenshot.comment || '[No description provided]'}\n`;
+    });
+    
+    newIssueMarkdown += `\n`;
+    
+    // Add screenshot references
+    screenshots.forEach((screenshot, index) => {
+      newIssueMarkdown += `![Screenshot ${index + 1}](screenshots/issue-${nextId}-screenshot-${index + 1}.png)\n`;
+    });
+    
+    newIssueMarkdown += `
+**Environment:**
+- URL: ${url}
+- User Agent: ${userAgent}
+- Timestamp: ${timestamp}
+
+### Investigation and Diagnosis
+
+[TO BE FILLED DURING INVESTIGATION]
+
+### Solution
+
+[TO BE FILLED WHEN RESOLVED]
+
+### Verification
+
+[TO BE FILLED AFTER TESTING]
+
+---
+`;
+    
+    // Append to ISSUE.md
+    fs.appendFileSync(issueMdPath, newIssueMarkdown);
+    
+    res.json({ 
+      success: true, 
+      issueId: nextId,
+      message: `Bug report saved as Issue #${nextId}` 
+    });
+    
+  } catch (error) {
+    console.error('Error saving bug report:', error);
+    res.status(500).json({ error: 'Failed to save bug report: ' + error.message });
+  }
+});
+
+// DEVELOPMENT MODE: Comment out production static serving
+// app.use(express.static(path.join(__dirname, 'build')));
+
+// DEVELOPMENT MODE: Comment out wildcard route
+// app.get('*', (req, res) => {
+//   // Don't serve HTML for API routes
+//   if (req.path.startsWith('/api/')) {
+//     return res.status(404).json({ error: 'API endpoint not found' });
+//   }
+//   res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// });
 
 app.listen(PORT, () => {
   console.log(`Backend server is running on http://localhost:${PORT}`);
