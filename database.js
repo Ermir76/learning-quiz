@@ -11,7 +11,7 @@ const initDb = () => {
     db.run(`CREATE TABLE IF NOT EXISTS quizzes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
-      category TEXT NOT NULL,
+      categoryId TEXT NOT NULL,
       tags TEXT,
       modelUsed TEXT,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -57,10 +57,10 @@ db.deleteQuiz = function(quizId, callback) {
  * @param {function} callback - Callback with (err, quizId)
  */
 db.saveQuiz = function(quiz, callback) {
-  const { title, category, tags, modelUsed, questions } = quiz;
+  const { title, categoryId, tags, modelUsed, questions } = quiz;
   db.run(
-    `INSERT INTO quizzes (title, category, tags, modelUsed) VALUES (?, ?, ?, ?)`,
-    [title, category, Array.isArray(tags) ? tags.join(',') : tags, modelUsed],
+    `INSERT INTO quizzes (title, categoryId, tags, modelUsed) VALUES (?, ?, ?, ?)`,
+    [title, categoryId, Array.isArray(tags) ? tags.join(',') : tags, modelUsed],
     function(err) {
       if (err) return callback(err);
       const quizId = this.lastID;

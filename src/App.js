@@ -43,17 +43,20 @@ function App() {
 
   // Save quiz to backend and update state
   const addQuiz = (newQuiz) => {
+    // Spara endast categoryId, ta bort category om den finns
+    const quizToSave = { ...newQuiz };
+    if (quizToSave.category) delete quizToSave.category;
     fetch('/api/quizzes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newQuiz)
+      body: JSON.stringify(quizToSave)
     })
       .then(res => res.json())
       .then(data => {
         if (data.id) {
           setQuizzes(prevQuizzes => ({
             ...prevQuizzes,
-            [data.id]: { ...newQuiz, id: data.id }
+            [data.id]: { ...quizToSave, id: data.id }
           }));
         }
       })
@@ -65,11 +68,21 @@ function App() {
 
   // Optionally, implement delete endpoint in backend for full sync
   const deleteQuiz = (quizId) => {
-    // Remove from local state only for now
-    const newQuizzes = { ...quizzes };
-    delete newQuizzes[quizId];
-    setQuizzes(newQuizzes);
-    // TODO: Add backend delete support if needed
+    fetch(`/api/quizzes/${quizId}`, {
+      method: 'DELETE'
+    })
+      .then(res => {
+        if (res.status === 204) {
+          const newQuizzes = { ...quizzes };
+          delete newQuizzes[quizId];
+          setQuizzes(newQuizzes);
+        } else {
+          console.error('Failed to delete quiz:', res.status);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to delete quiz:', err);
+      });
   };
 
   const renderPage = () => {
