@@ -8,12 +8,34 @@ import QuizPage from './components/QuizPage';
 import ResultsPage from './components/ResultsPage';
 import ReviewQuizPage from './components/ReviewQuizPage';
 import BugReporter from './components/BugReporter';
+import SettingsSidebar from './components/SettingsSidebar';
+import { SettingsIcon } from './components/Icons';
 import { initialCategoriesData } from './data/initialData';
 
 function App() {
   const [page, setPage] = useState('welcome');
   const categories = initialCategoriesData;
 
+  // Settings state
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState({
+    primaryScraper: 'puppeteer',
+    fallbackScraper: 'apify',
+    scraperTimeout: 30000,
+    enableFallback: true
+  });
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('quizAppSettings');
+    if (savedSettings) {
+      try {
+        setSettings(JSON.parse(savedSettings));
+      } catch (error) {
+        console.error('Failed to parse saved settings:', error);
+      }
+    }
+  }, []);
 
   const [quizzes, setQuizzes] = useState({});
   const [progress, setProgress] = useState({});
@@ -122,7 +144,7 @@ function App() {
         return <OptionsPage setPage={setPage} />;
       case 'createQuiz':
         // Pass down setSelectedCategory to enable a better user flow
-        return <CreateQuizPage setPage={setPage} addQuiz={addQuiz} setSelectedCategory={setSelectedCategory} categories={categories} setGeneratedQuiz={setGeneratedQuiz} />;
+        return <CreateQuizPage setPage={setPage} addQuiz={addQuiz} setSelectedCategory={setSelectedCategory} categories={categories} setGeneratedQuiz={setGeneratedQuiz} settings={settings} />;
       case 'quizCategories':
         return <QuizCategoriesPage setPage={setPage} setSelectedCategory={setSelectedCategory} categories={categories} quizzes={quizzes} progress={progress} />;
       case 'categoryQuizList':
@@ -141,7 +163,27 @@ function App() {
 
   return (
     <div className="bg-slate-900 min-h-screen flex items-center justify-center font-sans p-4">
+      {/* Settings Button */}
+      <button 
+        onClick={() => setShowSettings(true)}
+        className="fixed top-4 right-4 z-50 bg-slate-700 hover:bg-slate-600 p-3 rounded-full shadow-lg transition-colors"
+        title="Settings"
+      >
+        <SettingsIcon className="w-6 h-6 text-slate-300" />
+      </button>
+
+      {/* Main Content */}
       {renderPage()}
+      
+      {/* Settings Sidebar */}
+      <SettingsSidebar 
+        show={showSettings} 
+        onClose={() => setShowSettings(false)}
+        settings={settings}
+        onUpdateSettings={setSettings}
+      />
+      
+      {/* Bug Reporter */}
       <BugReporter />
     </div>
   );

@@ -110,6 +110,57 @@ app.delete('/api/quizzes/:id', (req, res) => {
   });
 });
 
+// Scraper Management Routes
+const ScraperFactory = require('./src/api/scrapers/ScraperFactory');
+
+// Get available scrapers status
+app.get('/api/scrapers/status', (req, res) => {
+  try {
+    const scrapers = ScraperFactory.getAvailableScrapers();
+    res.json({ 
+      scrapers,
+      status: {} // Will be populated by client tests
+    });
+  } catch (error) {
+    console.error('Error getting scraper status:', error);
+    res.status(500).json({ message: 'Failed to get scraper status.' });
+  }
+});
+
+// Test a specific scraper
+app.post('/api/scrapers/test', express.json(), async (req, res) => {
+  try {
+    const { scraper: scraperId, url } = req.body;
+    
+    if (!scraperId || !url) {
+      return res.status(400).json({ message: 'Scraper ID and URL are required.' });
+    }
+
+    const testUrl = url || 'https://example.com';
+    const scraper = ScraperFactory.getScraper(scraperId);
+    
+    const startTime = Date.now();
+    const result = await scraper.extractText(testUrl, { timeout: 15000 });
+    const processingTime = Date.now() - startTime;
+
+    res.json({
+      success: result.success,
+      textLength: result.text ? result.text.length : 0,
+      processingTime: processingTime,
+      error: result.error,
+      scraper: scraperId
+    });
+
+  } catch (error) {
+    console.error('Error testing scraper:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message,
+      scraper: req.body.scraper
+    });
+  }
+});
+
 // Bug Reporter Routes
 // Get next available issue ID
 app.get('/api/next-issue-id', (req, res) => {

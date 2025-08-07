@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { DocumentArrowUpIcon, PhotoIcon, XCircleIcon } from './Icons';
 import LoadingIndicator from './LoadingIndicator'; // Import the new component
 
-const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCategory }) => {
+const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCategory, settings }) => {
   const [text, setText] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,6 +49,12 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
     
     const formData = new FormData();
     formData.append('numQuestions', numQuestions);
+
+    // Add scraper preferences from settings
+    if (settings) {
+      formData.append('primaryScraper', settings.primaryScraper || 'puppeteer');
+      formData.append('fallbackScraper', settings.fallbackScraper || 'apify');
+    }
 
     if (selectedFile) {
       formData.append('file', selectedFile);

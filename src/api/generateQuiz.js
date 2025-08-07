@@ -2,6 +2,7 @@
 // to handle file uploads (PDF, images, text), URLs, and plain text.
 
 const { classifierPrompt, quizGeneratorPrompts } = require('../promptTemplates.js');
+const ScraperFactory = require('./scrapers/ScraperFactory');
 
 // --- Helper Functions ---
 
@@ -18,77 +19,19 @@ function isValidURL(text) {
 }
 
 /**
- * Extracts text from a given URL using Apify's Website Content Crawler.
+ * Extracts text from a given URL using the configured scraper system.
  * @param {string} url The URL to scrape.
+ * @param {object} options Scraping options including scraper preference.
  * @returns {Promise<string>} The extracted text content.
  */
-async function extractTextFromURL(url) {
-  const apiToken = process.env.APIFY_API_TOKEN;
-  if (!apiToken) {
-    throw new Error("Server configuration error: Apify API token not found.");
+async function extractTextFromURL(url, options = {}) {
+  const result = await ScraperFactory.extractText(url, options);
+  
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to extract text from URL');
   }
-
-  const actorId = 'apify/website-content-crawler';
-  const encodedActorId = encodeURIComponent(actorId);
-  const runUrl = `https://api.apify.com/v2/acts/${encodedActorId}/runs?token=${apiToken}`;
-
-  const runInput = {
-    startUrls: [{ url: url }],
-    maxCrawlDepth: 0, // Only crawl the specified URL
-    saveHtml: false, // We only need the text
-  };
-
-  // Start the actor run
-  const runResponse = await fetch(runUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(runInput),
-  });
-
-  if (!runResponse.ok) {
-    const errorBody = await runResponse.text();
-    console.error("Apify API Error (starting run):", errorBody);
-    throw new Error(`Apify API call failed with status ${runResponse.status}`);
-  }
-
-  const runData = await runResponse.json();
-  const { id: runId, status: initialStatus, defaultDatasetId } = runData.data;
-
-  // Wait for the run to finish
-  let status = initialStatus;
-  const statusUrl = `https://api.apify.com/v2/acts/${encodedActorId}/runs/${runId}?token=${apiToken}`;
-  while (status !== 'SUCCEEDED' && status !== 'FAILED') {
-    await sleep(2000); // Poll every 2 seconds
-    const statusResponse = await fetch(statusUrl);
-    const statusData = await statusResponse.json();
-        if (!statusData.data || typeof statusData.data.status === 'undefined') {
-            console.error("Unexpected Apify status response:", statusData);
-            throw new Error("Apify status API returned an unexpected response format.");
-        }
-        status = statusData.data.status;
-  }
-
-  if (status === 'FAILED') {
-    throw new Error(`Apify actor run failed. Run ID: ${runId}`);
-  }
-
-  // Fetch the results from the dataset
-  const datasetUrl = `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?token=${apiToken}`;
-  const datasetResponse = await fetch(datasetUrl);
-  const datasetItems = await datasetResponse.json();
-
-  if (!datasetItems || datasetItems.length === 0 || !datasetItems[0].text) {
-    throw new Error("Could not extract any text content from the URL using Apify.");
-  }
-
-  // Concatenate text from all results (though there should only be one)
-  const textContent = datasetItems.map(item => item.text).join('\n\n');
-
-  if (textContent.trim().length < 50) {
-    throw new Error("Could not extract sufficient text content from the URL.");
-  }
-
-  return textContent;
+  
+  return result.text;
 }
 
 /**
@@ -205,7 +148,7 @@ async function handler(req, res) {
   }
 
   try {
-    const { topic: inputText, numQuestions } = req.body;
+    const { topic: inputText, numQuestions, primaryScraper, fallbackScraper } = req.body;
     const files = req.files;
     let plainText;
     let contextSource = "input"; // For logging
@@ -223,8 +166,15 @@ async function handler(req, res) {
 
     } else if (inputText && isValidURL(inputText)) {
       contextSource = `the URL '${inputText}'`;
-      console.log(`Input is ${contextSource}. Fetching content...`);
-      plainText = await extractTextFromURL(inputText);
+      console.log(`Input is ${contextSource}. Fetching content with ${primaryScraper || 'default'} scraper...`);
+      
+      const scraperOptions = {
+        primaryScraper: primaryScraper || 'puppeteer',
+        fallbackScraper: fallbackScraper || 'apify',
+        timeout: 30000
+      };
+      
+      plainText = await extractTextFromURL(inputText, scraperOptions);
 
     } else if (inputText) {
       contextSource = "the provided plain text";
