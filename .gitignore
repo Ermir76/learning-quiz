@@ -19,6 +19,10 @@
 .env.test.local
 .env.production.local
 
+# database
+quiz_app.db
+*.db
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
