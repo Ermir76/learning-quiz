@@ -1,8 +1,20 @@
 import React from 'react';
 
 const QuizCategoriesPage = ({ setPage, setSelectedCategory, categories, quizzes, progress = {} }) => (
-  <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-4xl mx-auto">
-    <h2 className="text-3xl font-bold mb-8 text-slate-200">Mina Samlingar</h2>
+  <div className="bg-slate-800 p-8 rounded-lg shadow-lg max-w-6xl w-full">
+    <div className="flex items-center justify-between mb-8">
+      <h1 className="text-4xl font-bold text-white">📚 Study Library</h1>
+      <button
+        onClick={() => setPage('options')}
+        className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg transition-colors"
+      >
+        ← Back
+      </button>
+    </div>
+    
+    <p className="text-slate-300 text-lg mb-8 text-center">
+      Choose a subject to browse your study sets
+    </p>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {categories.map(category => {
         const categoryQuizzes = Object.values(quizzes).filter(q => q.categoryId === category.id);
@@ -48,9 +60,6 @@ const QuizCategoriesPage = ({ setPage, setSelectedCategory, categories, quizzes,
         );
       })}
     </div>
-     <button onClick={() => setPage('options')} className="mt-8 text-slate-300 hover:text-slate-100 py-2 rounded-lg">
-        Back
-      </button>
   </div>
 );
 

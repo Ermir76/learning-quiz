@@ -53,13 +53,13 @@ app.get('/api/quizzes', (req, res) => {
 
 // Save quiz progress/attempt
 app.post('/api/progress', express.json(), (req, res) => {
-  const { quizId, score, totalQuestions } = req.body;
+  const { quizId, score, totalQuestions, sessionType = 'quiz' } = req.body;
   
   if (!quizId || score === undefined || !totalQuestions) {
     return res.status(400).json({ message: 'Missing required fields: quizId, score, totalQuestions' });
   }
   
-  db.saveProgress(quizId, score, totalQuestions, (err, attemptId) => {
+  db.saveProgress(quizId, score, totalQuestions, sessionType, (err, attemptId) => {
     if (err) {
       console.error('Error saving progress:', err);
       return res.status(500).json({ message: 'Failed to save progress.' });

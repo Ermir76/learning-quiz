@@ -5,6 +5,7 @@ import CreateQuizPage from './components/CreateQuizPage';
 import QuizCategoriesPage from './components/QuizCategoriesPage';
 import CategoryQuizListPage from './components/CategoryQuizListPage';
 import QuizPage from './components/QuizPage';
+import FlashcardPage from './components/FlashcardPage';
 import ResultsPage from './components/ResultsPage';
 import ReviewQuizPage from './components/ReviewQuizPage';
 import BugReporter from './components/BugReporter';
@@ -114,12 +115,12 @@ function App() {
   };
 
 
-  // Save quiz progress when user completes a quiz
-  const saveProgress = (quizId, score, totalQuestions) => {
+  // Save quiz progress when user completes a quiz or flashcard session
+  const saveProgress = (quizId, score, totalQuestions, sessionType = 'quiz') => {
     fetch('/api/progress', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quizId, score, totalQuestions })
+      body: JSON.stringify({ quizId, score, totalQuestions, sessionType })
     })
       .then(res => res.json())
       .then(() => {
@@ -151,6 +152,8 @@ function App() {
         return <CategoryQuizListPage setPage={setPage} setSelectedQuiz={setSelectedQuiz} category={selectedCategory} quizzes={quizzes} deleteQuiz={deleteQuiz} progress={progress} />;
       case 'quiz':
         return <QuizPage setPage={setPage} quiz={selectedQuiz} setResults={setResults} saveProgress={saveProgress} />;
+      case 'flashcard':
+        return <FlashcardPage setPage={setPage} quiz={selectedQuiz} setResults={setResults} saveProgress={saveProgress} />;
       case 'results':
         return <ResultsPage setPage={setPage} results={results} quiz={selectedQuiz} />;
       case 'reviewQuiz':

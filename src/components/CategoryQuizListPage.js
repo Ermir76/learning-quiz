@@ -3,19 +3,69 @@ import React, { useState } from 'react';
 const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, deleteQuiz, progress = {} }) => {
   const [filterTags, setFilterTags] = useState([]);
   
-  // Function to get progress color based on score
-  const getProgressColor = (score) => {
-    if (score >= 95) return 'bg-green-600'; // Mastered - Dark Green
-    if (score >= 71) return 'bg-green-400'; // Good - Light Green
-    if (score >= 41) return 'bg-yellow-500'; // Improving - Yellow
-    if (score > 0) return 'bg-red-500'; // Needs work - Red
+  // Function to get progress color based on combined score
+  const getProgressColor = (progress) => {
+    const combinedScore = getCombinedScore(progress);
+    if (combinedScore >= 95) return 'bg-green-600'; // Mastered - Dark Green
+    if (combinedScore >= 71) return 'bg-green-400'; // Good - Light Green
+    if (combinedScore >= 41) return 'bg-yellow-500'; // Improving - Yellow
+    if (combinedScore > 0) return 'bg-red-500'; // Needs work - Red
     return 'bg-gray-600'; // Not attempted - Gray
   };
 
-  const getProgressText = (score, isMastered) => {
+  // Calculate combined knowledge score from quiz and flashcard performance
+  const getCombinedScore = (progress) => {
+    if (!progress) return 0;
+    
+    const { 
+      averageScore = 0, 
+      averageFlashcardScore = 0, 
+      attempts = 0, 
+      flashcardAttempts = 0,
+      isMastered = false 
+    } = progress;
+
+    // If marked as mastered, return high score
+    if (isMastered) return 100;
+    
+    // If no attempts at all, return 0
+    if (attempts === 0 && flashcardAttempts === 0) return 0;
+    
+    // Calculate weighted average
+    // Give slightly more weight to quiz scores (60%) vs flashcards (40%)
+    // since quizzes are more rigorous testing
+    const totalAttempts = attempts + flashcardAttempts;
+    
+    // If only one type of attempt exists, use that score
+    if (attempts === 0) return averageFlashcardScore;
+    if (flashcardAttempts === 0) return averageScore;
+    
+    // Combined weighted score
+    const weightedQuizScore = (averageScore * attempts * 0.6) / totalAttempts;
+    const weightedFlashcardScore = (averageFlashcardScore * flashcardAttempts * 0.4) / totalAttempts;
+    
+    return Math.round(weightedQuizScore + weightedFlashcardScore);
+  };
+
+  const getProgressText = (progress) => {
+    if (!progress) return 'Not attempted';
+    
+    const { isMastered = false, attempts = 0, flashcardAttempts = 0 } = progress;
+    
     if (isMastered) return 'MASTERED';
-    if (score === 0) return 'Not attempted';
-    return `${score}% avg`;
+    if (attempts === 0 && flashcardAttempts === 0) return 'Not attempted';
+    
+    const combinedScore = getCombinedScore(progress);
+    const totalSessions = attempts + flashcardAttempts;
+    
+    // Show breakdown if both types have been attempted
+    if (attempts > 0 && flashcardAttempts > 0) {
+      return `${combinedScore}% (${totalSessions} sessions)`;
+    } else if (attempts > 0) {
+      return `${combinedScore}% quiz`;
+    } else {
+      return `${combinedScore}% flashcard`;
+    }
   };
   
   const allTags = [...new Set(Object.values(quizzes).filter(q => q.categoryId === category.id).flatMap(q => q.tags))];
@@ -33,13 +83,20 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
 
   return (
     <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
-      <button onClick={() => setPage('quizCategories')} className="text-slate-300 hover:text-slate-100 mb-4">
-        &larr; Back to Categories
-      </button>
-      <h2 className="text-3xl font-bold mb-2 flex items-center text-slate-200">
-        <div className="bg-slate-700 p-2 rounded-lg mr-4 text-slate-300">{category.icon}</div>
-        {category.name}
-      </h2>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-2">
+              {category.icon} {category.name}
+            </h1>
+            <p className="text-slate-300">{category.description}</p>
+          </div>
+          <button
+            onClick={() => setPage('quizCategories')}
+            className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg transition-colors"
+          >
+            ← Back to Subjects
+          </button>
+        </div>
       
       <div className="mb-6">
         <h4 className="font-semibold mb-2 text-slate-300">Filter by tag:</h4>
@@ -55,9 +112,9 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
       {categoryQuizzes.length > 0 ? (
         <div className="space-y-4">
           {categoryQuizzes.map(quiz => {
-            const quizProgress = progress[quiz.id] || { averageScore: 0, attempts: 0, isMastered: false };
-            const progressColor = getProgressColor(quizProgress.averageScore);
-            const progressText = getProgressText(quizProgress.averageScore, quizProgress.isMastered);
+            const quizProgress = progress[quiz.id] || { averageScore: 0, attempts: 0, isMastered: false, averageFlashcardScore: 0, flashcardAttempts: 0 };
+            const progressColor = getProgressColor(quizProgress);
+            const progressText = getProgressText(quizProgress);
             
             return (
               <div key={quiz.id} className="bg-slate-700 p-5 rounded-lg shadow hover:shadow-lg hover:bg-slate-600 transition">
@@ -71,9 +128,12 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
                 <div className="flex flex-wrap gap-2 my-3">
                   {quiz.tags.map(tag => <span key={tag} className="bg-slate-600 text-slate-300 text-xs font-semibold px-2.5 py-0.5 rounded-full">{tag}</span>)}
                 </div>
-                {quizProgress.attempts > 0 && (
+                {(quizProgress.attempts > 0 || quizProgress.flashcardAttempts > 0) && (
                   <div className="text-xs text-slate-400 mb-3">
-                    Attempts: {quizProgress.attempts} | Last played: {new Date(quizProgress.lastAttempt).toLocaleDateString()}
+                    {quizProgress.attempts > 0 && `Quiz attempts: ${quizProgress.attempts}`}
+                    {quizProgress.attempts > 0 && quizProgress.flashcardAttempts > 0 && ' | '}
+                    {quizProgress.flashcardAttempts > 0 && `Flashcard sessions: ${quizProgress.flashcardAttempts}`}
+                    {quizProgress.lastAttempt && ` | Last played: ${new Date(quizProgress.lastAttempt).toLocaleDateString()}`}
                   </div>
                 )}
                 <div className="flex items-center space-x-4">
@@ -87,6 +147,15 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
                     Start Quiz
                   </button>
                   <button
+                    onClick={() => {
+                      setSelectedQuiz(quiz);
+                      setPage('flashcard');
+                    }}
+                    className="mt-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition"
+                  >
+                    Start Flashcard
+                  </button>
+                  <button
                     onClick={() => deleteQuiz(quiz.id)}
                     className="mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition"
                   >
@@ -98,7 +167,7 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
           })}
         </div>
       ) : (
-        <p className="text-slate-400 text-center mt-8">No quizzes found with the selected tags.</p>
+        <p className="text-slate-400 text-center mt-8">No study sets found with the selected tags.</p>
       )}
     </div>
   );

@@ -18,12 +18,12 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
     }
   };
 
-  const handleFileSelected = (file) => {
+  const handleFileSelected = useCallback((file) => {
     if (file) {
       resetInput();
       setSelectedFile(file);
     }
-  };
+  }, []);
 
   const handleFileChange = (event) => {
     handleFileSelected(event.target.files[0]);
@@ -41,7 +41,7 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
         return;
       }
     }
-  }, []);
+  }, [handleFileSelected]);
 
   const handleGenerate = async () => {
     if (!selectedFile && !text.trim()) return;
@@ -70,7 +70,7 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate quiz.');
+        throw new Error(errorData.message || 'Failed to generate study set.');
       }
 
       const { quiz, category: categoryName, modelUsed } = await response.json();
@@ -86,7 +86,7 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
       setPage('reviewQuiz');
 
     } catch (error) {
-      console.error("Error generating quiz:", error);
+      console.error("Error generating study set:", error);
       alert(error.message);
     } finally {
       setIsLoading(false);
@@ -115,8 +115,19 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
 
   return (
     <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
-      <h2 className="text-3xl font-bold mb-4 text-center text-slate-200">Create a Quiz</h2>
-      <p className="text-slate-300 mb-6 text-center">Drop a file, paste an image, click to upload, or just start typing.</p>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-4xl font-bold text-white">✏️ Create Study Set</h1>
+        <button
+          onClick={() => setPage('options')}
+          className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg transition-colors"
+        >
+          ← Back
+        </button>
+      </div>
+      
+      <p className="text-slate-300 text-lg mb-8 text-center">
+        Generate interactive study content with quizzes and flashcards using AI
+      </p>
       
       {/* Unified Input Box */}
       <div 
@@ -180,16 +191,13 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col space-y-4">
+      <div className="text-center">
         <button
           onClick={handleGenerate}
-          disabled={!canGenerate}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300 disabled:bg-slate-600 disabled:cursor-not-allowed flex items-center justify-center"
+          disabled={!canGenerate || isLoading}
+          className="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-lg text-xl transition-colors shadow-lg"
         >
-          Generate Quiz
-        </button>
-        <button onClick={() => setPage('options')} className="w-full text-slate-300 hover:text-slate-100 py-2 rounded-lg transition">
-          Back
+          {isLoading ? 'Generating Study Set...' : 'Generate Study Set'}
         </button>
       </div>
     </div>

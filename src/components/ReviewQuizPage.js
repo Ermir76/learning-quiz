@@ -9,7 +9,7 @@ const ReviewQuizPage = ({ setPage, generatedQuiz, addQuiz, categories, setSelect
 
   useEffect(() => {
     if (!generatedQuiz) {
-      // If no quiz is generated, go back to create quiz page
+      // If no study set is generated, go back to create study set page
       setPage('createQuiz');
     } else {
       setQuizToReview(generatedQuiz);
@@ -19,7 +19,7 @@ const ReviewQuizPage = ({ setPage, generatedQuiz, addQuiz, categories, setSelect
   }, [generatedQuiz, setPage]);
 
   if (!quizToReview) {
-    return <div className="text-slate-200">Loading quiz for review...</div>;
+    return <div className="text-slate-200">Loading study set for review...</div>;
   }
 
   const handleSaveQuiz = () => {
@@ -31,10 +31,6 @@ const ReviewQuizPage = ({ setPage, generatedQuiz, addQuiz, categories, setSelect
     addQuiz(finalQuiz);
     setSelectedCategory(categories.find(cat => cat.id === selectedCategoryId));
     setPage('categoryQuizList');
-  };
-
-  const handleDiscardQuiz = () => {
-    setPage('createQuiz'); // Go back to create quiz page
   };
 
   const handleTagChange = (e) => {
@@ -58,10 +54,22 @@ const ReviewQuizPage = ({ setPage, generatedQuiz, addQuiz, categories, setSelect
 
   return (
     <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-md mx-auto text-slate-200">
-      <h2 className="text-3xl font-bold mb-6 text-center">Review Your Quiz</h2>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-4xl font-bold text-white">👀 Review Study Set</h1>
+        <button
+          onClick={() => setPage('createQuiz')}
+          className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg transition-colors"
+        >
+          ← Back to Create
+        </button>
+      </div>
+      
+      <p className="text-slate-300 text-lg mb-8 text-center">
+        Review and customize your study set before saving
+      </p>
 
       <div className="mb-4">
-        <label htmlFor="quizTitleInput" className="block text-xl font-semibold mb-2">Quiz Title:</label>
+        <label htmlFor="quizTitleInput" className="block text-xl font-semibold mb-2">Study Set Title:</label>
         <input
           type="text"
           id="quizTitleInput"
@@ -97,24 +105,18 @@ const ReviewQuizPage = ({ setPage, generatedQuiz, addQuiz, categories, setSelect
         />
       </div>
 
-      <div className="flex justify-between space-x-4">
-        <button
-          onClick={() => setIsPreviewing(true)}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition"
-        >
-          Preview Quiz
-        </button>
+      <div className="flex gap-4 justify-center">
         <button
           onClick={handleSaveQuiz}
-          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition"
+          className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg transition-colors"
         >
-          Save Quiz
+          Save Study Set
         </button>
         <button
-          onClick={handleDiscardQuiz}
-          className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition"
+          onClick={() => setIsPreviewing(true)}
+          className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition-colors"
         >
-          Discard Quiz
+          {isPreviewing ? 'Stop Preview' : 'Preview Study Set'}
         </button>
       </div>
     </div>
