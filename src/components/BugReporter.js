@@ -6,6 +6,186 @@ const BugReporter = () => {
   const [screenshots, setScreenshots] = useState([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionArea, setSelectionArea] = useState(null);
+
+  const startSelection = () => {
+    setIsOpen(false); // Close modal
+    setIsSelecting(true);
+    
+    // Create selection overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'selection-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.3);
+      cursor: crosshair;
+      z-index: 9999;
+    `;
+    
+    let isDrawing = false;
+    let startX, startY;
+    let selectionBox;
+    
+    const createSelectionBox = () => {
+      selectionBox = document.createElement('div');
+      selectionBox.style.cssText = `
+        position: absolute;
+        border: 2px dashed #007acc;
+        background: rgba(0, 122, 204, 0.1);
+        pointer-events: none;
+      `;
+      overlay.appendChild(selectionBox);
+    };
+    
+    overlay.addEventListener('mousedown', (e) => {
+      isDrawing = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      createSelectionBox();
+    });
+    
+    overlay.addEventListener('mousemove', (e) => {
+      if (!isDrawing || !selectionBox) return;
+      
+      const currentX = e.clientX;
+      const currentY = e.clientY;
+      
+      const x = Math.min(startX, currentX);
+      const y = Math.min(startY, currentY);
+      const width = Math.abs(currentX - startX);
+      const height = Math.abs(currentY - startY);
+      
+      selectionBox.style.left = x + 'px';
+      selectionBox.style.top = y + 'px';
+      selectionBox.style.width = width + 'px';
+      selectionBox.style.height = height + 'px';
+    });
+    
+    overlay.addEventListener('mouseup', (e) => {
+      if (!isDrawing) return;
+      
+      const currentX = e.clientX;
+      const currentY = e.clientY;
+      
+      const x = Math.min(startX, currentX);
+      const y = Math.min(startY, currentY);
+      const width = Math.abs(currentX - startX);
+      const height = Math.abs(currentY - startY);
+      
+      if (width > 10 && height > 10) {
+        setSelectionArea({
+          x: x,
+          y: y,
+          width: width,
+          height: height,
+          scrollX: window.pageXOffset,
+          scrollY: window.pageYOffset,
+          // Store absolute coordinates (relative to document)
+          absoluteX: x + window.pageXOffset,
+          absoluteY: y + window.pageYOffset
+        });
+      }
+      
+      document.body.removeChild(overlay);
+      setIsSelecting(false);
+      setIsOpen(true);
+      
+      // Auto-capture after selection
+      if (width > 10 && height > 10) {
+        // Remove auto-capture to let user manually trigger it
+        // setTimeout(() => captureSelection(), 100);
+      }
+    });
+    
+    // ESC to cancel
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        document.body.removeChild(overlay);
+        setIsSelecting(false);
+        setIsOpen(true);
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    document.body.appendChild(overlay);
+  };
+
+  const captureSelection = async () => {
+    if (!selectionArea) return;
+    
+    setIsCapturing(true);
+    try {
+      // Close modal for clean capture
+      setIsOpen(false);
+      
+      // Wait for modal to close
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Capture full page first
+      const fullCanvas = await html2canvas(document.body, {
+        useCORS: true,
+        allowTaint: true,
+        scale: 1,
+        scrollX: 0,
+        scrollY: 0,
+        width: document.body.scrollWidth,
+        height: document.body.scrollHeight
+      });
+      
+      // Create cropped canvas
+      const croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = selectionArea.width;
+      croppedCanvas.height = selectionArea.height;
+      
+      const ctx = croppedCanvas.getContext('2d');
+      
+      // Use absolute coordinates (relative to full document)
+      const sourceX = selectionArea.absoluteX || (selectionArea.x + selectionArea.scrollX);
+      const sourceY = selectionArea.absoluteY || (selectionArea.y + selectionArea.scrollY);
+      const sourceWidth = selectionArea.width;
+      const sourceHeight = selectionArea.height;
+      
+      console.log('📊 Debug Info:');
+      console.log('Selection area:', selectionArea);
+      console.log('Canvas dimensions:', fullCanvas.width, 'x', fullCanvas.height);
+      console.log('Document dimensions:', document.body.scrollWidth, 'x', document.body.scrollHeight);
+      console.log('Viewport coordinates:', selectionArea.x, selectionArea.y);
+      console.log('Absolute coordinates:', sourceX, sourceY);
+      console.log('Cropping region:', sourceX, sourceY, sourceWidth, sourceHeight);
+      
+      // Draw cropped section
+      ctx.drawImage(
+        fullCanvas,
+        sourceX, sourceY, sourceWidth, sourceHeight,
+        0, 0, selectionArea.width, selectionArea.height
+      );
+      
+      const screenshot = {
+        id: Date.now(),
+        image: croppedCanvas.toDataURL('image/png'),
+        comment: '',
+        timestamp: new Date().toLocaleString(),
+        filename: `issue-X-screenshot-${screenshots.length + 1}.png`,
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      };
+      
+      setScreenshots(prev => [...prev, screenshot]);
+      setSelectionArea(null); // Clear selection
+      setIsOpen(true); // Reopen modal
+    } catch (error) {
+      console.error('Failed to capture selection:', error);
+      alert('Failed to capture selection. Please try again.');
+      setIsOpen(true); // Reopen modal on error
+    }
+    setIsCapturing(false);
+  };
 
   const captureScreenshot = async () => {
     setIsCapturing(true);
@@ -214,8 +394,34 @@ const BugReporter = () => {
                   disabled={isCapturing}
                   className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-4 py-2 rounded transition-colors"
                 >
-                  {isCapturing ? 'Capturing...' : '📸 Capture Screenshot'}
+                  {isCapturing ? 'Capturing...' : '📸 Full Screenshot'}
                 </button>
+                
+                <button
+                  onClick={startSelection}
+                  disabled={isCapturing || isSelecting}
+                  className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white px-4 py-2 rounded transition-colors"
+                >
+                  {isSelecting ? 'Selecting...' : '✂️ Select Area'}
+                </button>
+                
+                {selectionArea && (
+                  <>
+                    <button
+                      onClick={captureSelection}
+                      disabled={isCapturing}
+                      className="bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white px-4 py-2 rounded transition-colors"
+                    >
+                      {isCapturing ? 'Capturing...' : '📸 Capture Selection'}
+                    </button>
+                    <button
+                      onClick={() => setSelectionArea(null)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded transition-colors text-sm"
+                    >
+                      Clear Selection
+                    </button>
+                  </>
+                )}
                 
                 {screenshots.length > 0 && (
                   <>
@@ -235,6 +441,20 @@ const BugReporter = () => {
                   </>
                 )}
               </div>
+              
+              {/* Instructions */}
+              {isSelecting && (
+                <p className="text-yellow-300 text-sm mt-2">
+                  🖱️ Click and drag to select area, ESC to cancel
+                </p>
+              )}
+              
+              {selectionArea && (
+                <p className="text-green-300 text-sm mt-2">
+                  ✓ Selected area: {selectionArea.width}×{selectionArea.height}px
+                </p>
+              )}
+              
               {screenshots.length > 0 && (
                 <p className="text-slate-300 text-sm mt-2">
                   {screenshots.length} screenshot{screenshots.length !== 1 ? 's' : ''} captured

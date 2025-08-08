@@ -56,16 +56,9 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
     if (attempts === 0 && flashcardAttempts === 0) return 'Not attempted';
     
     const combinedScore = getCombinedScore(progress);
-    const totalSessions = attempts + flashcardAttempts;
     
-    // Show breakdown if both types have been attempted
-    if (attempts > 0 && flashcardAttempts > 0) {
-      return `${combinedScore}% (${totalSessions} sessions)`;
-    } else if (attempts > 0) {
-      return `${combinedScore}% quiz`;
-    } else {
-      return `${combinedScore}% flashcard`;
-    }
+    // Show only percentage in progress badge (remove session count)
+    return `${combinedScore}%`;
   };
   
   const allTags = [...new Set(Object.values(quizzes).filter(q => q.categoryId === category.id).flatMap(q => q.tags))];
@@ -130,10 +123,10 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
                 </div>
                 {(quizProgress.attempts > 0 || quizProgress.flashcardAttempts > 0) && (
                   <div className="text-xs text-slate-400 mb-3">
-                    {quizProgress.attempts > 0 && `Quiz attempts: ${quizProgress.attempts}`}
-                    {quizProgress.attempts > 0 && quizProgress.flashcardAttempts > 0 && ' | '}
-                    {quizProgress.flashcardAttempts > 0 && `Flashcard sessions: ${quizProgress.flashcardAttempts}`}
-                    {quizProgress.lastAttempt && ` | Last played: ${new Date(quizProgress.lastAttempt).toLocaleDateString()}`}
+                    Progress: {quizProgress.attempts > 0 && `${quizProgress.attempts} quiz attempt${quizProgress.attempts !== 1 ? 's' : ''}`}
+                    {quizProgress.attempts > 0 && quizProgress.flashcardAttempts > 0 && ', '}
+                    {quizProgress.flashcardAttempts > 0 && `${quizProgress.flashcardAttempts} flashcard session${quizProgress.flashcardAttempts !== 1 ? 's' : ''}`}
+                    {quizProgress.lastAttempt && ` | Last: ${new Date(quizProgress.lastAttempt).toLocaleDateString()}`}
                   </div>
                 )}
                 <div className="flex items-center space-x-4">
