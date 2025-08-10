@@ -3,14 +3,14 @@ import React, { useState } from 'react';
 const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, deleteQuiz, progress = {} }) => {
   const [filterTags, setFilterTags] = useState([]);
   
-  // Function to get progress color based on combined score
+  // Function to get progress badge classes with accessible contrast for light + dark
   const getProgressColor = (progress) => {
     const combinedScore = getCombinedScore(progress);
-    if (combinedScore >= 95) return 'bg-green-600'; // Mastered - Dark Green
-    if (combinedScore >= 71) return 'bg-green-400'; // Good - Light Green
-    if (combinedScore >= 41) return 'bg-yellow-500'; // Improving - Yellow
-    if (combinedScore > 0) return 'bg-red-500'; // Needs work - Red
-    return 'bg-gray-600'; // Not attempted - Gray
+    if (combinedScore >= 95) return 'bg-green-100 text-green-700 dark:bg-green-600 dark:text-white';
+    if (combinedScore >= 71) return 'bg-green-50 text-green-700 dark:bg-green-400 dark:text-slate-900';
+    if (combinedScore >= 41) return 'bg-amber-100 text-amber-700 dark:bg-yellow-500 dark:text-slate-900';
+    if (combinedScore > 0) return 'bg-red-100 text-red-700 dark:bg-red-500 dark:text-white';
+    return 'bg-slate-200 text-slate-600 dark:bg-gray-600 dark:text-slate-200';
   };
 
   // Calculate combined knowledge score from quiz and flashcard performance
@@ -75,13 +75,13 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
       <div className="max-w-6xl mx-auto space-y-10">
         <div className="flex flex-col md:flex-row md:items-end gap-6">
           <div className="flex-1 space-y-4 animate-fade-in">
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-surface-200/60 border border-surface-300/40 backdrop-blur-xl w-fit text-xs tracking-wide font-semibold uppercase text-slate-400">
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-surface-200/80 border border-surface-300/60 backdrop-blur-xl w-fit text-xs tracking-wide font-semibold uppercase text-slate-600 dark:text-slate-400">
               <span className="h-2 w-2 rounded-full bg-accent" /> Category
             </div>
-            <h1 className="heading-display text-4xl md:text-5xl bg-clip-text text-transparent bg-gradient-to-br from-slate-100 via-slate-300 to-slate-100 drop-shadow-sm">
+            <h1 className="heading-display text-4xl md:text-5xl text-slate-900 dark:text-slate-100 drop-shadow-sm">
               {category.name}
             </h1>
-            <p className="text-slate-400 max-w-prose leading-relaxed text-sm md:text-base">
+            <p className="text-slate-600 dark:text-slate-400 max-w-prose leading-relaxed text-sm md:text-base">
               {category.description}
             </p>
           </div>
@@ -98,11 +98,11 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
               <button onClick={() => setFilterTags([])} className="btn-quiet !px-3 !py-1 text-xs">Reset</button>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
             {allTags.map(tag => {
               const active = filterTags.includes(tag);
               return (
-                <button key={tag} onClick={() => toggleTag(tag)} className={`px-3 py-1 rounded-full text-xs font-medium tracking-wide transition border ${active ? 'bg-accent text-white border-accent shadow-glow' : 'bg-surface-200/70 border-surface-300/40 text-slate-300 hover:border-accent/40 hover:text-slate-200'}`}>{tag}</button>
+        <button key={tag} onClick={() => toggleTag(tag)} className={`px-3 py-1 rounded-full text-xs font-medium tracking-wide transition border ${active ? 'bg-accent text-white border-accent shadow-glow' : 'bg-surface-100 hover:bg-surface-200 border-surface-300/70 text-slate-600 hover:text-slate-800 dark:bg-surface-200/30 dark:hover:bg-surface-300/40 dark:text-slate-300 dark:hover:text-slate-100'}`}>{tag}</button>
               );
             })}
             {allTags.length === 0 && (
@@ -122,19 +122,19 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
                 <div key={quiz.id} className="card group relative overflow-hidden flex flex-col">
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-accent/10 via-transparent to-transparent pointer-events-none" />
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-display text-lg font-semibold tracking-tight text-slate-100 group-hover:text-white transition">{quiz.title}</h3>
-                    <div className={`badge ${progressColor} shadow-md`}>{progressText}</div>
+                    <h3 className="font-display text-lg font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-accent-strong dark:group-hover:text-white transition">{quiz.title}</h3>
+                    <div className={`badge shadow-md ring-1 ring-inset ring-black/5 dark:ring-white/10 ${progressColor}`}>{progressText}</div>
                   </div>
-                  <p className="text-sm text-slate-400 flex-1 leading-relaxed line-clamp-4">{quiz.description}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 flex-1 leading-relaxed line-clamp-4">{quiz.description}</p>
                   <div className="flex flex-wrap gap-1.5 mt-4">
                     {quiz.tags.map(tag => <span key={tag} className="badge-soft text-[10px] tracking-wide">{tag}</span>)}
                   </div>
                   {(quizProgress.attempts > 0 || quizProgress.flashcardAttempts > 0) && (
-                    <div className="mt-4 text-[10px] uppercase tracking-wide font-medium text-slate-500 flex flex-wrap gap-x-2 gap-y-1">
+                    <div className="mt-4 text-[10px] uppercase tracking-wide font-medium text-slate-500 dark:text-slate-400 flex flex-wrap gap-x-2 gap-y-1">
                       {quizProgress.attempts > 0 && <span>{quizProgress.attempts} Quiz</span>}
                       {quizProgress.flashcardAttempts > 0 && <span>{quizProgress.flashcardAttempts} Flashcard</span>}
-                      {quizProgress.lastAttempt && <span className="text-slate-600">{new Date(quizProgress.lastAttempt).toLocaleDateString()}</span>}
-                      {mastered && <span className="text-accent">Mastered</span>}
+                      {quizProgress.lastAttempt && <span className="text-slate-600 dark:text-slate-300">{new Date(quizProgress.lastAttempt).toLocaleDateString()}</span>}
+                      {mastered && <span className="text-accent-strong dark:text-accent-soft">Mastered</span>}
                     </div>
                   )}
                   <div className="mt-6 grid grid-cols-3 gap-2">

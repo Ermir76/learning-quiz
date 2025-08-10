@@ -89,4 +89,27 @@ const ChartIcon = (props) => (
   </svg>
 );
 
-export { CodeIcon, HistoryIcon, ScienceIcon, DocumentArrowUpIcon, PhotoIcon, XCircleIcon, SettingsIcon, ChevronRightIcon, ChevronDownIcon, LibraryIcon, PencilIcon, EyeIcon, ChartIcon };
+// Additional feature icons
+const QuizIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-1 2-1.7 2.5-.6.4-.8.7-.8 1.5v.5" />
+    <path d="M12 17h.01" />
+  </svg>
+);
+
+const FlashcardsIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="4" width="13" height="13" rx="2" />
+    <path d="M9 17h7a2 2 0 0 0 2-2V8" />
+  </svg>
+);
+
+const SparkleIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3v4m0 10v4M5 12H1m22 0h-4M6.8 6.8l-2.8-2.8m15.2 15.2 2.8 2.8M6.8 17.2l-2.8 2.8m15.2-15.2 2.8-2.8" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+export { CodeIcon, HistoryIcon, ScienceIcon, DocumentArrowUpIcon, PhotoIcon, XCircleIcon, SettingsIcon, ChevronRightIcon, ChevronDownIcon, LibraryIcon, PencilIcon, EyeIcon, ChartIcon, QuizIcon, FlashcardsIcon, SparkleIcon };

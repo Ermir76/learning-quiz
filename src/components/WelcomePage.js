@@ -1,6 +1,16 @@
 import React from 'react';
+import { QuizIcon, FlashcardsIcon, SparkleIcon, ChartIcon, EyeIcon, DocumentArrowUpIcon } from './Icons';
 
 const WelcomePage = ({ setPage }) => {
+  const features = [
+    { label: 'Quiz Engine', subtitle: 'Timed questions', icon: <QuizIcon className="w-5 h-5" /> },
+    { label: 'Flashcards', subtitle: 'Active recall', icon: <FlashcardsIcon className="w-5 h-5" /> },
+    { label: 'AI Generate', subtitle: 'Create sets', icon: <SparkleIcon className="w-5 h-5" /> },
+    { label: 'Progress', subtitle: 'Track mastery', icon: <ChartIcon className="w-5 h-5" /> },
+    { label: 'Review Mode', subtitle: 'Weak spots', icon: <EyeIcon className="w-5 h-5" /> },
+    { label: 'Export', subtitle: 'Save / share', icon: <DocumentArrowUpIcon className="w-5 h-5" /> }
+  ];
+
   return (
     <div className="app-shell flex items-center justify-center px-6 py-16">
       <div className="max-w-4xl w-full animate-fade-in">
@@ -28,26 +38,19 @@ const WelcomePage = ({ setPage }) => {
           <div className="relative group hidden md:block">
             <div className="absolute inset-0 blur-3xl opacity-40 group-hover:opacity-60 transition duration-700 bg-gradient-to-br from-accent/30 via-indigo-700/20 to-transparent rounded-full" />
             <div className="relative aspect-square w-full max-w-md mx-auto grid grid-cols-2 gap-6 p-6">
-              {[
-                {label:'Quiz Engine',desc:'Timed questions'},
-                {label:'Flashcards',desc:'Active recall'},
-                {label:'AI Generate',desc:'Create sets'},
-                {label:'Progress',desc:'Track mastery'},
-                {label:'Review Mode',desc:'Weak spots'},
-                {label:'Export',desc:'Save / share'}
-              ].map((f,i)=> (
+              {features.map((f, i) => (
                 <div
                   key={f.label}
                   className="group/card card flex flex-col items-start justify-between text-left p-4 overflow-hidden relative animate-scale-in focus:outline-none ring-0 transition-shadow hover:shadow-glow"
-                  style={{animationDelay: `${i*60}ms`}}
+                  style={{ animationDelay: `${i * 60}ms` }}
                 >
                   <div className="absolute inset-0 opacity-0 group-hover/card:opacity-100 transition duration-500 bg-gradient-to-br from-accent/10 via-transparent to-transparent pointer-events-none" />
-                  <div className="relative w-9 h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center text-[11px] font-semibold tracking-wide uppercase">
-                    {f.label.split(' ')[0].slice(0,2)}
+                  <div className="relative w-9 h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center">
+                    {f.icon}
                   </div>
                   <div className="relative mt-4 space-y-1">
                     <div className="text-sm font-semibold tracking-tight text-slate-800 dark:text-slate-100 leading-snug group-hover/card:text-accent-strong dark:group-hover/card:text-accent-soft transition-colors">{f.label}</div>
-                    <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 tracking-wide">{f.desc}</div>
+                    <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 tracking-wide">{f.subtitle}</div>
                   </div>
                   <div className="relative mt-4 flex items-center gap-1 text-[10px] tracking-wider font-semibold text-accent opacity-0 group-hover/card:opacity-100 transition-all translate-y-1 group-hover/card:translate-y-0">View <span>→</span></div>
                 </div>

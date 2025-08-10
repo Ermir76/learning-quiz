@@ -11,18 +11,26 @@ module.exports = {
       colors: {
         // Modern accent palette
         accent: {
-          DEFAULT: '#6366F1', // indigo-500 baseline
-          soft: '#818CF8',
-          strong: '#4F46E5',
-          neon: '#7B5CFF'
+          DEFAULT: '#10B981', // emerald-500
+          soft: '#34D399',    // emerald-400
+          strong: '#059669',  // emerald-600
+          neon: '#6EE7B7'     // bright mint accent
         },
         surface: {
-          50: '#0F1115',
-          100: '#161B22',
-          200: '#1E2530',
-          300: '#273140',
-          400: '#303C4E',
-          500: '#3A475B',
+          // Light mode neutral surfaces
+          50: '#F8FAFC',
+          100: '#F1F5F9',
+          200: '#E2E8F0',
+          300: '#CBD5E1',
+          400: '#94A3B8',
+          500: '#64748B',
+          // Dark mode handled via .dark overrides in CSS
+        },
+        brand: {
+          bg: '#F5F8FF',
+          bgAlt: '#EEF3FF',
+          border: '#E1E8F5',
+          text: '#1E293B'
         },
         positive: '#10B981',
         warning: '#F59E0B',
