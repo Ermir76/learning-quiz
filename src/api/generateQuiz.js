@@ -206,8 +206,48 @@ async function handler(req, res) {
     const generatorPrompt = generatorPromptFunction(plainText, numQuestions);
     
     const { rawText: quizJsonString, modelUsed: modelForQuiz } = await callAI(generatorPrompt, true);
-    
-    res.status(200).json({ quiz: JSON.parse(quizJsonString), category: categoryName, modelUsed: modelForQuiz });
+
+    // --- Step 3: Generate Subject Explanation (podcast-style markdown) ---
+    let explanationText = null;
+    let explanationFilePath = null;
+    try {
+      const quizObjPreview = JSON.parse(quizJsonString);
+      const quizTitle = quizObjPreview.title || 'study-topic';
+      const now = new Date();
+      const pad = (n) => n.toString().padStart(2,'0');
+      const timestamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      const sanitize = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60) || 'topic';
+      const fileName = `${timestamp}-${sanitize(categoryName)}-${sanitize(quizTitle)}.md`;
+      const path = require('path');
+      const fs = require('fs');
+      const explanationsDir = path.resolve(__dirname, '../../..', 'subject_explanations');
+      if (!fs.existsSync(explanationsDir)) {
+        fs.mkdirSync(explanationsDir, { recursive: true });
+      }
+      const podcastPrompt = `You are an engaging podcast host. Using ONLY the provided source text and quiz context, create a concise spoken-style explanation for the learner.\n\nCATEGORY: ${categoryName}\nTITLE: ${quizTitle}\nSOURCE EXCERPT (truncated):\n"""${plainText.substring(0,4000)}"""\n\nSTRUCTURE (Markdown headings):\n# Subject Overview\n## Core Concepts\n## Key Terms\n## Quick Example\n## Common Pitfalls\n## Next Steps\n\nREQUIREMENTS:\n- Max 400 words.\n- Conversational, motivating, no hype words like 'just' or 'simply' overused.\n- Use Key Terms as bullet list: Term: short definition (<=12 words).\n- If source is sparse, indicate '(High-level due to limited source material)'.\n- No extra sections.\n- No closing promo.\nProceed now.`;
+      const { rawText: rawExplanation } = await callAI(podcastPrompt, false);
+      explanationText = rawExplanation.trim();
+      const fileFullPath = path.join(explanationsDir, fileName);
+      // Write markdown file
+      const frontMatter = `---\ncategory: ${categoryName}\ntitle: ${quizTitle}\ngeneratedAt: ${now.toISOString()}\nmodel: ${modelForQuiz}\nformatVersion: 1\n---\n\n`;
+      fs.writeFileSync(fileFullPath, frontMatter + explanationText, 'utf8');
+      explanationFilePath = fileFullPath;
+    } catch (expErr) {
+      console.warn('Explanation generation failed:', expErr.message);
+      // Create stub file so user sees placeholder
+      try {
+        const path = require('path');
+        const fs = require('fs');
+        const explanationsDir = path.resolve(__dirname, '../../..', 'subject_explanations');
+        if (!fs.existsSync(explanationsDir)) fs.mkdirSync(explanationsDir, { recursive: true });
+        const stubName = `failed-${Date.now()}.md`;
+        const stubPath = path.join(explanationsDir, stubName);
+        fs.writeFileSync(stubPath, 'Explanation temporarily unavailable—regenerate later.', 'utf8');
+        explanationFilePath = stubPath;
+      } catch {}
+    }
+
+    res.status(200).json({ quiz: JSON.parse(quizJsonString), category: categoryName, modelUsed: modelForQuiz, explanation: { text: explanationText, file: explanationFilePath } });
 
   } catch (error) {
     console.error(`[31mError in handler: ${error.message} [0m`);

@@ -26,3 +26,6 @@ quiz_app.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# generated subject explanations (stored outside app folder)
+/../subject_explanations
