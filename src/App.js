@@ -164,8 +164,12 @@ function App() {
     }
   };
 
+  const [theme, setTheme] = useState('dark');
+  useEffect(()=>{ document.documentElement.classList.toggle('dark', theme==='dark'); },[theme]);
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
   return (
-    <div className="bg-slate-900 min-h-screen flex items-center justify-center font-sans p-4">
+    <div className="app-shell font-sans">
       {/* Settings Button */}
       <button 
         onClick={() => setShowSettings(true)}
@@ -174,9 +178,18 @@ function App() {
       >
         <SettingsIcon className="w-6 h-6 text-slate-300" />
       </button>
+      <button
+        onClick={toggleTheme}
+        className="fixed top-4 right-20 z-50 bg-surface-200/70 hover:bg-surface-300 text-slate-200 hover:text-white px-4 py-2 rounded-lg text-xs font-medium transition"
+        title="Toggle theme"
+      >
+        {theme === 'dark' ? 'Light' : 'Dark'}
+      </button>
 
       {/* Main Content */}
-      {renderPage()}
+      <div className="flex items-center justify-center min-h-screen px-4 py-10">
+        {renderPage()}
+      </div>
       
       {/* Settings Sidebar */}
       <SettingsSidebar 
@@ -186,8 +199,8 @@ function App() {
         onUpdateSettings={setSettings}
       />
       
-      {/* Bug Reporter */}
-      <BugReporter />
+  {/* Bug Reporter */}
+  <BugReporter />
     </div>
   );
 }

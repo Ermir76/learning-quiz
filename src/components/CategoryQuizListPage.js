@@ -71,93 +71,87 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
   };
 
   return (
-    <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-2">
-              {category.icon} {category.name}
+    <div className="app-shell min-h-screen px-6 py-12">
+      <div className="max-w-6xl mx-auto space-y-10">
+        <div className="flex flex-col md:flex-row md:items-end gap-6">
+          <div className="flex-1 space-y-4 animate-fade-in">
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-surface-200/60 border border-surface-300/40 backdrop-blur-xl w-fit text-xs tracking-wide font-semibold uppercase text-slate-400">
+              <span className="h-2 w-2 rounded-full bg-accent" /> Category
+            </div>
+            <h1 className="heading-display text-4xl md:text-5xl bg-clip-text text-transparent bg-gradient-to-br from-slate-100 via-slate-300 to-slate-100 drop-shadow-sm">
+              {category.name}
             </h1>
-            <p className="text-slate-300">{category.description}</p>
+            <p className="text-slate-400 max-w-prose leading-relaxed text-sm md:text-base">
+              {category.description}
+            </p>
           </div>
-          <button
-            onClick={() => setPage('quizCategories')}
-            className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg transition-colors"
-          >
-            ← Back to Subjects
-          </button>
+          <div className="flex gap-4 animate-fade-in md:justify-end">
+            <button onClick={() => setPage('quizCategories')} className="btn-quiet">Back</button>
+            <button onClick={() => setPage('createQuiz')} className="btn-secondary">New Quiz</button>
+          </div>
         </div>
-      
-      <div className="mb-6">
-        <h4 className="font-semibold mb-2 text-slate-300">Filter by tag:</h4>
-        <div className="flex flex-wrap gap-2">
-          {allTags.map(tag => (
-            <button key={tag} onClick={() => toggleTag(tag)} className={`px-3 py-1 rounded-full text-sm font-semibold transition ${filterTags.includes(tag) ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
-              {tag}
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {categoryQuizzes.length > 0 ? (
-        <div className="space-y-4">
-          {categoryQuizzes.map(quiz => {
-            const quizProgress = progress[quiz.id] || { averageScore: 0, attempts: 0, isMastered: false, averageFlashcardScore: 0, flashcardAttempts: 0 };
-            const progressColor = getProgressColor(quizProgress);
-            const progressText = getProgressText(quizProgress);
-            
-            return (
-              <div key={quiz.id} className="bg-slate-700 p-5 rounded-lg shadow hover:shadow-lg hover:bg-slate-600 transition">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-bold text-slate-200">{quiz.title}</h3>
-                  <div className={`px-3 py-1 rounded-full text-xs font-bold text-white ${progressColor}`}>
-                    {progressText}
-                  </div>
-                </div>
-                <p className="text-slate-300 my-2">{quiz.description}</p>
-                <div className="flex flex-wrap gap-2 my-3">
-                  {quiz.tags.map(tag => <span key={tag} className="bg-slate-600 text-slate-300 text-xs font-semibold px-2.5 py-0.5 rounded-full">{tag}</span>)}
-                </div>
-                {(quizProgress.attempts > 0 || quizProgress.flashcardAttempts > 0) && (
-                  <div className="text-xs text-slate-400 mb-3">
-                    Progress: {quizProgress.attempts > 0 && `${quizProgress.attempts} quiz attempt${quizProgress.attempts !== 1 ? 's' : ''}`}
-                    {quizProgress.attempts > 0 && quizProgress.flashcardAttempts > 0 && ', '}
-                    {quizProgress.flashcardAttempts > 0 && `${quizProgress.flashcardAttempts} flashcard session${quizProgress.flashcardAttempts !== 1 ? 's' : ''}`}
-                    {quizProgress.lastAttempt && ` | Last: ${new Date(quizProgress.lastAttempt).toLocaleDateString()}`}
-                  </div>
-                )}
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => {
-                      setSelectedQuiz(quiz);
-                      setPage('quiz');
-                    }}
-                    className="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition"
-                  >
-                    Start Quiz
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedQuiz(quiz);
-                      setPage('flashcard');
-                    }}
-                    className="mt-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition"
-                  >
-                    Start Flashcard
-                  </button>
-                  <button
-                    onClick={() => deleteQuiz(quiz.id)}
-                    className="mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+        <div className="card space-y-5 animate-scale-in">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <h2 className="text-sm font-semibold tracking-wide text-slate-400 uppercase">Filter</h2>
+            {filterTags.length > 0 && (
+              <button onClick={() => setFilterTags([])} className="btn-quiet !px-3 !py-1 text-xs">Reset</button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {allTags.map(tag => {
+              const active = filterTags.includes(tag);
+              return (
+                <button key={tag} onClick={() => toggleTag(tag)} className={`px-3 py-1 rounded-full text-xs font-medium tracking-wide transition border ${active ? 'bg-accent text-white border-accent shadow-glow' : 'bg-surface-200/70 border-surface-300/40 text-slate-300 hover:border-accent/40 hover:text-slate-200'}`}>{tag}</button>
+              );
+            })}
+            {allTags.length === 0 && (
+              <span className="text-xs text-slate-500 italic">No tags yet.</span>
+            )}
+          </div>
         </div>
-      ) : (
-        <p className="text-slate-400 text-center mt-8">No study sets found with the selected tags.</p>
-      )}
+
+        {categoryQuizzes.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {categoryQuizzes.map(quiz => {
+              const quizProgress = progress[quiz.id] || { averageScore: 0, attempts: 0, isMastered: false, averageFlashcardScore: 0, flashcardAttempts: 0 };
+              const progressColor = getProgressColor(quizProgress);
+              const progressText = getProgressText(quizProgress);
+              const mastered = quizProgress.isMastered;
+              return (
+                <div key={quiz.id} className="card group relative overflow-hidden flex flex-col">
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-accent/10 via-transparent to-transparent pointer-events-none" />
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-display text-lg font-semibold tracking-tight text-slate-100 group-hover:text-white transition">{quiz.title}</h3>
+                    <div className={`badge ${progressColor} shadow-md`}>{progressText}</div>
+                  </div>
+                  <p className="text-sm text-slate-400 flex-1 leading-relaxed line-clamp-4">{quiz.description}</p>
+                  <div className="flex flex-wrap gap-1.5 mt-4">
+                    {quiz.tags.map(tag => <span key={tag} className="badge-soft text-[10px] tracking-wide">{tag}</span>)}
+                  </div>
+                  {(quizProgress.attempts > 0 || quizProgress.flashcardAttempts > 0) && (
+                    <div className="mt-4 text-[10px] uppercase tracking-wide font-medium text-slate-500 flex flex-wrap gap-x-2 gap-y-1">
+                      {quizProgress.attempts > 0 && <span>{quizProgress.attempts} Quiz</span>}
+                      {quizProgress.flashcardAttempts > 0 && <span>{quizProgress.flashcardAttempts} Flashcard</span>}
+                      {quizProgress.lastAttempt && <span className="text-slate-600">{new Date(quizProgress.lastAttempt).toLocaleDateString()}</span>}
+                      {mastered && <span className="text-accent">Mastered</span>}
+                    </div>
+                  )}
+                  <div className="mt-6 grid grid-cols-3 gap-2">
+                    <button onClick={() => { setSelectedQuiz(quiz); setPage('quiz'); }} className="btn-primary !py-2 !text-xs">Quiz</button>
+                    <button onClick={() => { setSelectedQuiz(quiz); setPage('flashcard'); }} className="btn-secondary !py-2 !text-xs">Cards</button>
+                    <button onClick={() => deleteQuiz(quiz.id)} className="btn-danger !py-2 !text-xs">Del</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-20 card animate-fade-in">
+            <p className="text-slate-500 text-sm">No study sets match current filters.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
