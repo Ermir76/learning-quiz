@@ -43,81 +43,45 @@ const ReviewQuizPage = ({ setPage, generatedQuiz, addQuiz, categories, setSelect
 
   if (isPreviewing) {
     return (
-      <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-4xl mx-auto">
-        <button onClick={() => setIsPreviewing(false)} className="text-slate-300 hover:text-slate-100 mb-4">
-          &larr; Back to Review
-        </button>
-        <QuizPage quiz={quizToReview} setResults={() => {} } setPage={() => {} } isPreview={true} />
+      <div className="app-shell min-h-screen px-6 py-10">
+        <div className="max-w-5xl mx-auto animate-fade-in">
+          <div className="mb-4 flex items-center justify-between">
+            <button onClick={() => setIsPreviewing(false)} className="btn-quiet !px-3 !py-1 text-xs">← Back to Review</button>
+          </div>
+          <QuizPage quiz={quizToReview} setResults={() => {} } setPage={() => {} } isPreview={true} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-md mx-auto text-slate-200">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-bold text-white">👀 Review Study Set</h1>
-        <button
-          onClick={() => setPage('createQuiz')}
-          className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg transition-colors"
-        >
-          ← Back to Create
-        </button>
-      </div>
-      
-      <p className="text-slate-300 text-lg mb-8 text-center">
-        Review and customize your study set before saving
-      </p>
-
-      <div className="mb-4">
-        <label htmlFor="quizTitleInput" className="block text-xl font-semibold mb-2">Study Set Title:</label>
-        <input
-          type="text"
-          id="quizTitleInput"
-          value={quizToReview.title}
-          onChange={(e) => setQuizToReview({ ...quizToReview, title: e.target.value })}
-          className="w-full p-2 rounded-lg bg-slate-700 text-slate-200 border border-slate-600 text-lg"
-        />
-      </div>
-
-      <div className="mb-4">
-        <label htmlFor="categorySelect" className="block text-sm font-bold mb-2">Select Category:</label>
-        <select
-          id="categorySelect"
-          value={selectedCategoryId}
-          onChange={handleCategoryChange}
-          className="w-full p-2 rounded-lg bg-slate-700 text-slate-200 border border-slate-600"
-        >
-          {categories.map(cat => (
-            <option key={cat.id} value={cat.id}>{cat.name}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="mb-6">
-        <label htmlFor="tagsInput" className="block text-sm font-bold mb-2">Edit Tags (comma-separated):</label>
-        <input
-          type="text"
-          id="tagsInput"
-          value={editedTags}
-          onChange={handleTagChange}
-          className="w-full p-2 rounded-lg bg-slate-700 text-slate-200 border border-slate-600"
-          placeholder="e.g., Python, Data Structures, Beginner"
-        />
-      </div>
-
-      <div className="flex gap-4 justify-center">
-        <button
-          onClick={handleSaveQuiz}
-          className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-        >
-          Save Study Set
-        </button>
-        <button
-          onClick={() => setIsPreviewing(true)}
-          className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-        >
-          {isPreviewing ? 'Stop Preview' : 'Preview Study Set'}
-        </button>
+    <div className="app-shell min-h-screen px-6 py-10">
+      <div className="max-w-xl mx-auto card p-8 space-y-8 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">👀 Review Study Set</h1>
+          <button onClick={() => setPage('createQuiz')} className="btn-quiet !px-3 !py-1 text-xs">← Back</button>
+        </div>
+        <p className="text-sm text-slate-600 dark:text-slate-400 text-center">Review and customize your study set before saving</p>
+        <div className="space-y-5">
+          <div>
+            <label htmlFor="quizTitleInput" className="block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-300">Study Set Title</label>
+            <input id="quizTitleInput" type="text" value={quizToReview.title} onChange={(e)=>setQuizToReview({...quizToReview,title:e.target.value})} className="input" />
+          </div>
+          <div>
+            <label htmlFor="categorySelect" className="block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-300">Select Category</label>
+            <select id="categorySelect" value={selectedCategoryId} onChange={handleCategoryChange} className="input">
+              {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="tagsInput" className="block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-300">Edit Tags (comma-separated)</label>
+            <input id="tagsInput" type="text" value={editedTags} onChange={handleTagChange} placeholder="e.g., Python, Data Structures, Beginner" className="input" />
+          </div>
+        </div>
+        <div className="flex gap-4 justify-center pt-4">
+          <button onClick={handleSaveQuiz} className="btn-primary px-6">Save Study Set</button>
+          <button onClick={() => setIsPreviewing(true)} className="btn-secondary px-6">Preview Study Set</button>
+        </div>
       </div>
     </div>
   );

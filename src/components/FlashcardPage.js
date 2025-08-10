@@ -73,121 +73,52 @@ const FlashcardPage = ({ setPage, quiz, setResults, saveProgress }) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <div className="bg-slate-800 p-8 rounded-xl shadow-2xl">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <button 
-            onClick={() => setPage('categoryQuizList')}
-            className="text-slate-300 hover:text-slate-100 transition"
-          >
-            &larr; Back to Quiz List
-          </button>
-          <div className="text-slate-300 font-semibold">
-            Card {currentCardIndex + 1} of {totalCards}
+    <div className="app-shell min-h-screen px-6 py-10">
+      <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <button onClick={() => setPage('categoryQuizList')} className="btn-quiet !px-3 !py-1 text-xs">← Back</button>
+          <div className="text-xs font-medium tracking-wide text-slate-500 dark:text-slate-400">Card {currentCardIndex + 1} / {totalCards}</div>
+        </div>
+        <div className="card p-8">
+          <h1 className="text-2xl font-semibold text-center text-slate-900 dark:text-slate-100 mb-6">{quiz.title}</h1>
+          <div className="w-full h-2 bg-surface-200 dark:bg-slate-700 rounded-full mb-8 overflow-hidden">
+            <div className="h-full bg-accent transition-all duration-300" style={{ width: `${((currentCardIndex + 1) / totalCards) * 100}%` }} />
           </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="w-full bg-slate-700 rounded-full h-2 mb-6">
-          <div 
-            className="bg-indigo-600 h-2 rounded-full transition-all duration-300" 
-            style={{ width: `${((currentCardIndex + 1) / totalCards) * 100}%` }}
-          ></div>
-        </div>
-
-        {/* Quiz Title */}
-        <h1 className="text-2xl font-bold text-slate-200 mb-6 text-center">{quiz.title}</h1>
-
-        {/* Flashcard */}
-        <div className="bg-slate-700 rounded-lg p-8 min-h-80 flex flex-col justify-center">
-          {!isFlipped ? (
-            // Front of card - Question
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-slate-200 mb-6">Question</h2>
-              <div className="text-lg text-slate-300 mb-8">
-                <LaTeXRenderer text={question.text} />
+          <div className="rounded-xl border border-surface-200 dark:border-slate-600 p-8 min-h-72 flex flex-col justify-center bg-white dark:bg-slate-800/60">
+            {!isFlipped ? (
+              <div className="text-center space-y-6">
+                <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Question</h2>
+                <div className="text-lg text-slate-700 dark:text-slate-300"><LaTeXRenderer text={question.text} /></div>
+                <button onClick={handleFlip} className="btn-primary px-6 py-3">Flip Card</button>
               </div>
-              <button
-                onClick={handleFlip}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition"
-              >
-                Flip Card
-              </button>
-            </div>
-          ) : (
-            // Back of card - Answer
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-slate-200 mb-6">Answer</h2>
-              <div className="text-lg text-slate-300 mb-6">
-                <LaTeXRenderer text={getCorrectAnswerText(question)} />
-              </div>
-              
-              {/* Show explanation if available */}
-              {question.explanation && (
-                <div className="bg-slate-600 rounded-lg p-4 mb-6">
-                  <h3 className="text-sm font-semibold text-slate-300 mb-2">Explanation:</h3>
-                  <p className="text-sm text-slate-400">
-                    <LaTeXRenderer text={question.explanation} />
-                  </p>
+            ) : (
+              <div className="text-center space-y-6">
+                <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Answer</h2>
+                <div className="text-lg text-slate-700 dark:text-slate-300"><LaTeXRenderer text={getCorrectAnswerText(question)} /></div>
+                {question.explanation && (
+                  <div className="rounded-lg border bg-surface-50 border-surface-200 dark:bg-slate-700/60 dark:border-slate-600 p-4 text-left">
+                    <h3 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-300">Explanation</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400"><LaTeXRenderer text={question.explanation} /></p>
+                  </div>
+                )}
+                {question.learnMoreUrl && (
+                  <div>
+                    <a href={question.learnMoreUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:text-accent-strong underline">Learn More</a>
+                  </div>
+                )}
+                <div className="text-sm font-medium text-slate-600 dark:text-slate-400">Did you know this answer?</div>
+                <div className="flex justify-center gap-4">
+                  <button onClick={() => handleKnown(true)} className="btn-secondary bg-green-600/90 hover:bg-green-600 text-white border-0">✓ I Knew It</button>
+                  <button onClick={() => handleKnown(false)} className="btn-secondary bg-red-600/90 hover:bg-red-600 text-white border-0">✗ I Didn't Know It</button>
                 </div>
-              )}
-
-              {/* Learn More Link */}
-              {question.learnMoreUrl && (
-                <div className="mb-6">
-                  <a 
-                    href={question.learnMoreUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm text-indigo-400 hover:text-indigo-300 underline"
-                  >
-                    Learn More
-                  </a>
-                </div>
-              )}
-
-              <div className="text-lg font-semibold text-slate-300 mb-4">
-                Did you know this answer?
               </div>
-              
-              <div className="flex justify-center space-x-4">
-                <button
-                  onClick={() => handleKnown(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition"
-                >
-                  ✓ I Knew It
-                </button>
-                <button
-                  onClick={() => handleKnown(false)}
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition"
-                >
-                  ✗ I Didn't Know It
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Navigation */}
-        <div className="flex justify-between items-center mt-6">
-          <button
-            onClick={handlePrevious}
-            disabled={currentCardIndex === 0}
-            className={`py-2 px-4 rounded-lg font-semibold transition ${
-              currentCardIndex === 0 
-                ? 'bg-slate-600 text-slate-400 cursor-not-allowed' 
-                : 'bg-slate-600 hover:bg-slate-500 text-slate-200'
-            }`}
-          >
-            Previous
-          </button>
-          
-          <div className="text-slate-400 text-sm">
-            {isFlipped ? 'Mark your answer to continue' : 'Click "Flip Card" to see the answer'}
+            )}
           </div>
-          
-          <div className="w-20"></div> {/* Spacer for alignment */}
+          <div className="flex items-center justify-between mt-8 text-xs text-slate-500 dark:text-slate-400">
+            <button onClick={handlePrevious} disabled={currentCardIndex === 0} className={`btn-quiet !px-4 !py-2 ${currentCardIndex === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}>Previous</button>
+            <div>{isFlipped ? 'Mark your answer to continue' : 'Flip to reveal the answer'}</div>
+            <div className="w-24" />
+          </div>
         </div>
       </div>
     </div>

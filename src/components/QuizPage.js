@@ -93,73 +93,76 @@ const QuizPage = ({ setPage, quiz, setResults, isPreview = false, saveProgress }
   };
   
   const getButtonClass = (index) => {
-      if (!isAnswered) {
-          return 'bg-slate-600 hover:bg-slate-500 border-slate-500';
-      }
-      if (index === correctAnswerIndex) {
-          return 'bg-green-700 border-green-800 scale-105'; // Correct answer stands out
-      }
-      if (index === selectedAnswer) {
-          return 'bg-red-700 border-red-800'; // Incorrect answer
-      }
-      return 'bg-slate-600 border-slate-500 opacity-50'; // Other options fade out
-  }
+    if (!isAnswered) {
+      return 'bg-surface-100 hover:bg-surface-200 border-surface-300 text-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:border-slate-600 dark:text-slate-200';
+    }
+    if (index === correctAnswerIndex) {
+      return 'bg-green-100 border-green-300 text-green-800 dark:bg-green-700 dark:border-green-600 dark:text-white scale-[1.02]';
+    }
+    if (index === selectedAnswer) {
+      return 'bg-red-100 border-red-300 text-red-800 dark:bg-red-700 dark:border-red-600 dark:text-white';
+    }
+    return 'bg-surface-50 border-surface-200 text-slate-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-400 opacity-60';
+  };
 
   return (
-    <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
-        <div className="bg-slate-700 p-8 rounded-xl shadow-2xl">
-            <div className="mb-6">
-                <p className="text-sm text-slate-400">Question {currentQuestionIndex + 1} of {quiz.questions.length}</p>
-                <h2 className="text-2xl font-bold mt-2 text-slate-200"><LaTeXRenderer text={question.text} /></h2>
-            </div>
-            {question.type === 'code-input' ? (
-                <div className="space-y-4">
-                    <textarea
-                        value={codeInputAnswer}
-                        onChange={(e) => setCodeInputAnswer(e.target.value)}
-                        disabled={isAnswered}
-                        className="w-full h-40 p-4 rounded-lg border-2 bg-slate-900 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-600 font-mono"
-                        placeholder="Write your code here..."
-                    />
-                    {!isAnswered && (
-                        <button
-                            onClick={handleCodeSubmit}
-                            disabled={!codeInputAnswer.trim()}
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg text-lg transition disabled:bg-slate-600 disabled:cursor-not-allowed"
-                        >
-                            Submit Answer
-                        </button>
-                    )}
-                </div>
-            ) : ( // Assumes 'multiple-choice'
-                <div className="space-y-3">
-                    {question.options.map((option, index) => (
-                        <button 
-                            key={index} 
-                            onClick={() => handleAnswer(index)}
-                            disabled={isAnswered}
-                            className={`w-full text-left p-4 rounded-lg border-2 transition text-lg text-slate-200 ${getButtonClass(index)}`}
-                        >
-                            <LaTeXRenderer text={option} />
-                        </button>
-                    ))}
-                </div>
-            )}
-            {isAnswered && (
-                <div className="mt-6 p-4 rounded-lg bg-slate-900/50">
-                    <h3 className="font-bold text-lg mb-2">{currentAnswerCorrect ? 'Correct!' : 'Incorrect'}</h3>
-                    <p className="text-slate-300"><LaTeXRenderer text={question.explanation} /></p>
-                </div>
-            )}
-            {isAnswered && (
-                <button 
-                    onClick={handleNext}
-                    className="mt-8 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg text-lg transition"
-                >
-                    {currentQuestionIndex < quiz.questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
-                </button>
-            )}
+    <div className="app-shell min-h-screen px-6 py-10">
+      <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <button onClick={() => setPage('categoryQuizList')} className="btn-quiet !px-3 !py-1 text-xs">← Back</button>
+          <div className="text-xs font-medium tracking-wide text-slate-500 dark:text-slate-400">Question {currentQuestionIndex + 1} / {quiz.questions.length}</div>
         </div>
+        <div className="card p-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 leading-snug"><LaTeXRenderer text={question.text} /></h2>
+          </div>
+          {question.type === 'code-input' ? (
+            <div className="space-y-4">
+              <textarea
+                value={codeInputAnswer}
+                onChange={(e) => setCodeInputAnswer(e.target.value)}
+                disabled={isAnswered}
+                className="w-full h-44 rounded-lg border bg-white dark:bg-slate-800/70 border-surface-300 dark:border-slate-600 focus:border-accent focus:ring-2 focus:ring-accent/40 px-4 py-3 font-mono text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400"
+                placeholder="Write your code here..."
+              />
+              {!isAnswered && (
+                <button
+                  onClick={handleCodeSubmit}
+                  disabled={!codeInputAnswer.trim()}
+                  className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                >Submit Answer</button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {question.options.map((option, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleAnswer(index)}
+                  disabled={isAnswered}
+                  className={`w-full text-left rounded-xl border px-5 py-4 text-base font-medium transition shadow-sm focus:outline-none focus:ring-2 focus:ring-accent/40 ${getButtonClass(index)}`}
+                >
+                  <LaTeXRenderer text={option} />
+                </button>
+              ))}
+            </div>
+          )}
+          {isAnswered && (
+            <div className={`mt-6 rounded-lg border px-5 py-4 text-sm leading-relaxed ${currentAnswerCorrect ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/40 dark:border-green-700 dark:text-green-200' : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/40 dark:border-red-700 dark:text-red-200'}`}>
+              <h3 className="font-semibold mb-2">{currentAnswerCorrect ? 'Correct!' : 'Incorrect'}</h3>
+              {question.explanation && (
+                <p className="text-slate-700 dark:text-slate-300"><LaTeXRenderer text={question.explanation} /></p>
+              )}
+            </div>
+          )}
+          {isAnswered && (
+            <button
+              onClick={handleNext}
+              className="btn-secondary w-full mt-8 font-semibold"
+            >{currentQuestionIndex < quiz.questions.length - 1 ? 'Next Question' : 'Finish Quiz'}</button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
