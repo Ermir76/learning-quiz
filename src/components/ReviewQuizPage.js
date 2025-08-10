@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import QuizPage from './QuizPage'; // To allow previewing the quiz
+import { EyeIcon } from './Icons';
 
 const ReviewQuizPage = ({ setPage, generatedQuiz, addQuiz, categories, setSelectedCategory }) => {
   const [quizToReview, setQuizToReview] = useState(generatedQuiz);
@@ -58,7 +59,7 @@ const ReviewQuizPage = ({ setPage, generatedQuiz, addQuiz, categories, setSelect
     <div className="app-shell min-h-screen px-6 py-10">
       <div className="max-w-xl mx-auto card p-8 space-y-8 animate-fade-in">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">👀 Review Study Set</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-900 dark:text-slate-100"><EyeIcon className="w-7 h-7 text-accent" /> Review Study Set</h1>
           <button onClick={() => setPage('createQuiz')} className="btn-quiet !px-3 !py-1 text-xs">← Back</button>
         </div>
         <p className="text-sm text-slate-600 dark:text-slate-400 text-center">Review and customize your study set before saving</p>

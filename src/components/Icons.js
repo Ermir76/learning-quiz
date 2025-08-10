@@ -57,4 +57,36 @@ const ChevronDownIcon = (props) => (
   </svg>
 );
 
-export { CodeIcon, HistoryIcon, ScienceIcon, DocumentArrowUpIcon, PhotoIcon, XCircleIcon, SettingsIcon, ChevronRightIcon, ChevronDownIcon };
+// New icons replacing emojis
+const LibraryIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="5" height="16" rx="1" />
+    <rect x="10" y="4" width="5" height="16" rx="1" />
+    <path d="M21 20h-4V4h4" />
+  </svg>
+);
+
+const PencilIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
+  </svg>
+);
+
+const EyeIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const ChartIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 3v18h18" />
+    <rect x="7" y="10" width="3" height="7" rx=".5" />
+    <rect x="12" y="6" width="3" height="11" rx=".5" />
+    <rect x="17" y="13" width="3" height="4" rx=".5" />
+  </svg>
+);
+
+export { CodeIcon, HistoryIcon, ScienceIcon, DocumentArrowUpIcon, PhotoIcon, XCircleIcon, SettingsIcon, ChevronRightIcon, ChevronDownIcon, LibraryIcon, PencilIcon, EyeIcon, ChartIcon };

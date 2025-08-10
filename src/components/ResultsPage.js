@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChartIcon } from './Icons';
 
 const ResultsPage = ({ setPage, results, quiz }) => {
     // Check if this is flashcard results or quiz results
@@ -12,8 +13,8 @@ const ResultsPage = ({ setPage, results, quiz }) => {
         return (
             <div className="app-shell min-h-screen px-6 py-10">
                 <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
-                    <div className="flex items-center justify-between">
-                        <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">📊 {isFlashcard ? 'Flashcard' : 'Quiz'} Results</h1>
+                                <div className="flex items-center justify-between">
+                                    <h1 className="flex items-center gap-3 text-3xl font-semibold text-slate-900 dark:text-slate-100"><ChartIcon className="w-8 h-8 text-accent" /> {isFlashcard ? 'Flashcard' : 'Quiz'} Results</h1>
                         <button onClick={() => setPage('categoryQuizList')} className="btn-quiet !px-4 !py-2 text-sm">← Back</button>
                     </div>
                     <div className="card p-10">

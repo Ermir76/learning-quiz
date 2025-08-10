@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { DocumentArrowUpIcon, PhotoIcon, XCircleIcon } from './Icons';
+import { DocumentArrowUpIcon, PhotoIcon, XCircleIcon, PencilIcon } from './Icons';
 import LoadingIndicator from './LoadingIndicator'; // Import the new component
 
 const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCategory, settings }) => {
@@ -114,24 +114,17 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
   }
 
   return (
-    <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-bold text-white">✏️ Create Study Set</h1>
-        <button
-          onClick={() => setPage('options')}
-          className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg transition-colors"
-        >
-          ← Back
-        </button>
-      </div>
-      
-      <p className="text-slate-300 text-lg mb-8 text-center">
-        Generate interactive study content with quizzes and flashcards using AI
-      </p>
+    <div className="app-shell min-h-screen px-6 py-10">
+      <div className="max-w-3xl mx-auto card p-10 space-y-8">
+        <div className="flex items-center justify-between">
+          <h1 className="flex items-center gap-3 text-3xl font-semibold text-slate-900 dark:text-slate-100"><PencilIcon className="w-8 h-8 text-accent" /> Create Study Set</h1>
+          <button onClick={() => setPage('options')} className="btn-quiet !px-4 !py-2 text-sm">← Back</button>
+        </div>
+        <p className="text-slate-600 dark:text-slate-400 text-sm text-center">Generate interactive study content with quizzes and flashcards using AI</p>
       
       {/* Unified Input Box */}
       <div 
-        className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-300 ${isDragOver ? 'border-indigo-500 bg-slate-700' : 'border-slate-600 hover:border-indigo-600'}`}
+        className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-300 ${isDragOver ? 'border-accent bg-surface-100 dark:bg-slate-700/60' : 'border-surface-300 dark:border-slate-600 hover:border-accent/70 bg-white dark:bg-slate-800/60'}`}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -162,15 +155,15 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
             <p className="mt-2 text-slate-400">Click to upload, or drag and drop</p>
             <p className="text-xs text-slate-500 mt-1">PDF, TXT, PNG, JPG, etc.</p>
             <div className="relative w-full my-4">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-600"></div></div>
-                <div className="relative flex justify-center"><span className="bg-slate-800 px-2 text-sm text-slate-400">OR</span></div>
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-surface-300 dark:border-slate-600"></div></div>
+                <div className="relative flex justify-center"><span className="bg-white dark:bg-slate-800 px-2 text-xs font-medium text-slate-500 dark:text-slate-400 tracking-wide">OR</span></div>
             </div>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               onPaste={handlePaste}
               onClick={(e) => e.stopPropagation()} // Prevent click from bubbling up to the div
-              className="w-full h-24 p-3 border-none rounded-lg bg-slate-700 text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-indigo-600 resize-none"
+              className="w-full h-24 p-3 border-none rounded-lg bg-surface-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-accent/50 resize-none"
               placeholder="Paste a URL, text, or an image..."
             />
           </div>
@@ -179,27 +172,23 @@ const CreateQuizPage = ({ setPage, categories, setGeneratedQuiz, setSelectedCate
 
       {/* Number of Questions Input */}
       <div className="my-6">
-        <label htmlFor="numQuestions" className="block text-slate-300 text-sm font-bold mb-2">Number of Questions:</label>
+        <label htmlFor="numQuestions" className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-2 uppercase tracking-wide">Number of Questions</label>
         <input
           type="number"
           id="numQuestions"
           value={numQuestions}
           onChange={(e) => setNumQuestions(Math.max(1, parseInt(e.target.value) || 1))}
           min="1"
-          className="w-full p-3 border border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition bg-slate-700 text-slate-200"
+          className="input"
         />
       </div>
-
       {/* Action Buttons */}
-      <div className="text-center">
-        <button
-          onClick={handleGenerate}
-          disabled={!canGenerate || isLoading}
-          className="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-lg text-xl transition-colors shadow-lg"
-        >
+      <div className="pt-4 text-center">
+        <button onClick={handleGenerate} disabled={!canGenerate || isLoading} className="btn-primary w-full py-4 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
           {isLoading ? 'Generating Study Set...' : 'Generate Study Set'}
         </button>
       </div>
+    </div>
     </div>
   );
 };
