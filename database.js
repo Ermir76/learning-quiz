@@ -136,12 +136,10 @@ db.getQuizProgress = function(quizId, callback) {
       }
       
       // Calculate combined mastery
-      const totalAttempts = quizAttempts.length + flashcardAttempts.length;
       let combinedScore = 0;
       if (quizAttempts.length > 0 && flashcardAttempts.length > 0) {
-        const quizWeight = (quizAttempts.length / totalAttempts) * 0.6;
-        const flashcardWeight = (flashcardAttempts.length / totalAttempts) * 0.4;
-        combinedScore = (averageScore * quizWeight) + (averageFlashcardScore * flashcardWeight);
+        // Fixed: Simple weighted average - 60% quiz, 40% flashcard
+        combinedScore = (averageScore * 0.6) + (averageFlashcardScore * 0.4);
       } else if (quizAttempts.length > 0) {
         combinedScore = averageScore;
       } else {
@@ -218,10 +216,8 @@ db.getAllProgress = function(callback) {
           // Calculate combined score for mastery determination
           let combinedScore = 0;
           if (progress.attempts > 0 && progress.flashcardAttempts > 0) {
-            // Weighted average: 60% quiz, 40% flashcard
-            const quizWeight = (progress.attempts / totalAttempts) * 0.6;
-            const flashcardWeight = (progress.flashcardAttempts / totalAttempts) * 0.4;
-            combinedScore = (progress.averageScore * quizWeight) + (progress.averageFlashcardScore * flashcardWeight);
+            // Fixed: Simple weighted average - 60% quiz, 40% flashcard
+            combinedScore = (progress.averageScore * 0.6) + (progress.averageFlashcardScore * 0.4);
           } else if (progress.attempts > 0) {
             combinedScore = progress.averageScore;
           } else {

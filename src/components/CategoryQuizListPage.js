@@ -34,17 +34,13 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
     // Calculate weighted average
     // Give slightly more weight to quiz scores (60%) vs flashcards (40%)
     // since quizzes are more rigorous testing
-    const totalAttempts = attempts + flashcardAttempts;
     
     // If only one type of attempt exists, use that score
     if (attempts === 0) return averageFlashcardScore;
     if (flashcardAttempts === 0) return averageScore;
     
-    // Combined weighted score
-    const weightedQuizScore = (averageScore * attempts * 0.6) / totalAttempts;
-    const weightedFlashcardScore = (averageFlashcardScore * flashcardAttempts * 0.4) / totalAttempts;
-    
-    return Math.round(weightedQuizScore + weightedFlashcardScore);
+    // Combined weighted score - Fixed: Simple 60%/40% weighting
+    return Math.round((averageScore * 0.6) + (averageFlashcardScore * 0.4));
   };
 
   const getProgressText = (progress) => {
