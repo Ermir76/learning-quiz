@@ -82,7 +82,7 @@ learning_quiz/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Ermir76/learning_quiz.git
+   git clone https://github.com/Ermir76/learning-quiz.git
    ```
 
 2. **Install dependencies**
