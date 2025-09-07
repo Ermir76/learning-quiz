@@ -1,0 +1,4 @@
+# Ignore all generated explanation markdown files
+*.md
+# Keep index if later added
+!index.json
