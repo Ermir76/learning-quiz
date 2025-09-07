@@ -75,7 +75,7 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
       <div className="max-w-6xl mx-auto space-y-10">
         <div className="flex flex-col md:flex-row md:items-end gap-6">
           <div className="flex-1 space-y-4 animate-fade-in">
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-surface-200/80 border border-surface-300/60 backdrop-blur-xl w-fit text-xs tracking-wide font-semibold uppercase text-slate-600 dark:text-slate-400">
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white border border-gray-300 backdrop-blur-xl w-fit text-xs tracking-wide font-semibold uppercase text-gray-800 dark:bg-slate-600 dark:border-slate-500 dark:text-slate-100">
               <span className="h-2 w-2 rounded-full bg-accent" /> Category
             </div>
             <h1 className="heading-display text-4xl md:text-5xl text-slate-900 dark:text-slate-100 drop-shadow-sm">
@@ -102,7 +102,7 @@ const CategoryQuizListPage = ({ setPage, setSelectedQuiz, category, quizzes, del
             {allTags.map(tag => {
               const active = filterTags.includes(tag);
               return (
-        <button key={tag} onClick={() => toggleTag(tag)} className={`px-3 py-1 rounded-full text-xs font-medium tracking-wide transition border ${active ? 'bg-accent text-white border-accent shadow-glow' : 'bg-surface-100 hover:bg-surface-200 border-surface-300/70 text-slate-600 hover:text-slate-800 dark:bg-surface-200/30 dark:hover:bg-surface-300/40 dark:text-slate-300 dark:hover:text-slate-100'}`}>{tag}</button>
+        <button key={tag} onClick={() => toggleTag(tag)} className={`px-3 py-1 rounded-full text-xs font-medium tracking-wide transition border ${active ? 'bg-accent text-white border-accent shadow-glow' : 'bg-white hover:bg-gray-50 border-gray-300 text-gray-800 hover:text-gray-900 dark:bg-slate-600 dark:hover:bg-slate-500 dark:text-slate-100 dark:hover:text-white dark:border-slate-500'}`}>{tag}</button>
               );
             })}
             {allTags.length === 0 && (

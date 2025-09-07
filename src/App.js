@@ -180,7 +180,7 @@ function App() {
       </button>
       <button
         onClick={toggleTheme}
-        className="fixed top-4 right-20 z-50 bg-surface-200/70 hover:bg-surface-300 text-slate-200 hover:text-white px-4 py-2 rounded-lg text-xs font-medium transition"
+        className="fixed top-4 right-20 z-50 bg-white hover:bg-gray-100 text-gray-800 hover:text-gray-900 border border-gray-300 dark:bg-slate-600 dark:hover:bg-slate-500 dark:text-slate-100 dark:hover:text-white dark:border-slate-500 px-4 py-2 rounded-lg text-xs font-medium transition"
         title="Toggle theme"
       >
         {theme === 'dark' ? 'Light' : 'Dark'}

@@ -165,7 +165,7 @@ app.post('/api/scrapers/test', express.json(), async (req, res) => {
 // Get next available issue ID
 app.get('/api/next-issue-id', (req, res) => {
   console.log('🚀 /api/next-issue-id endpoint HIT! Request received.');
-  const issueMdPath = path.join(__dirname, '../ISSUE.md');
+  const issueMdPath = path.join(__dirname, './ISSUE.md');
   
   try {
     const issueContent = fs.readFileSync(issueMdPath, 'utf8');
@@ -201,7 +201,7 @@ app.post('/api/save-bug-report', express.json({limit: '50mb'}), (req, res) => {
   
   try {
     // Get next issue ID
-    const issueMdPath = path.join(__dirname, '../ISSUE.md');
+    const issueMdPath = path.join(__dirname, './ISSUE.md');
     const issueContent = fs.readFileSync(issueMdPath, 'utf8');
     const idMatches = issueContent.match(/\*\*ID:\*\* (\d+)/g);
     
@@ -215,7 +215,7 @@ app.post('/api/save-bug-report', express.json({limit: '50mb'}), (req, res) => {
     }
     
     // Create screenshots directory if it doesn't exist
-    const screenshotsDir = path.join(__dirname, '../screenshots');
+    const screenshotsDir = path.join(__dirname, './screenshots');
     if (!fs.existsSync(screenshotsDir)) {
       fs.mkdirSync(screenshotsDir, { recursive: true });
     }
