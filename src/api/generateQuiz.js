@@ -3,8 +3,31 @@
 
 const { classifierPrompt, quizGeneratorPrompts } = require('../promptTemplates.js');
 const ScraperFactory = require('./scrapers/ScraperFactory');
+const JSON5 = require('json5');
 
 // --- Helper Functions ---
+
+/**
+ * Safely parse JSON, handling common AI generation issues
+ * @param {string} jsonString The JSON string to parse
+ * @returns {object} Parsed object or throws error with details
+ */
+function safeJsonParse(jsonString) {
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.warn('Standard JSON.parse failed, trying JSON5:', error.message);
+    try {
+      return JSON5.parse(jsonString);
+    } catch (json5Error) {
+      console.error('Both JSON and JSON5 parsing failed');
+      console.error('Original error:', error.message);
+      console.error('JSON5 error:', json5Error.message);
+      console.error('Raw JSON (first 500 chars):', jsonString.substring(0, 500));
+      throw new Error(`Failed to parse JSON: ${error.message}`);
+    }
+  }
+}
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -70,7 +93,7 @@ async function callAI(prompt, isQuizGeneration = false, file = null) {
 
     if (isQuizGeneration) {
       payload.generationConfig = { 
-          "maxOutputTokens": 8192,
+          "maxOutputTokens": 32768,  // Increased from 8192 to 32768 (4x more)
           "response_mime_type": "application/json"
       };
     }
@@ -210,8 +233,37 @@ async function handler(req, res) {
     // --- Step 3: Generate Subject Explanation (podcast-style markdown) ---
     let explanationText = null;
     let explanationFilePath = null;
+    
+    // First, validate that we can parse the quiz JSON before trying explanation
+    let quizObjPreview;
     try {
-      const quizObjPreview = JSON.parse(quizJsonString);
+      quizObjPreview = safeJsonParse(quizJsonString);
+    } catch (parseErr) {
+      console.warn('Cannot parse quiz JSON for explanation generation:', parseErr.message);
+      console.warn('Skipping explanation generation but continuing with quiz...');
+      // Create a failed explanation file
+      try {
+        const path = require('path');
+        const fs = require('fs');
+        const explanationsDir = path.resolve(__dirname, '../../..', 'subject_explanations');
+        if (!fs.existsSync(explanationsDir)) fs.mkdirSync(explanationsDir, { recursive: true });
+        const stubName = `failed-${Date.now()}.md`;
+        const stubPath = path.join(explanationsDir, stubName);
+        fs.writeFileSync(stubPath, `Explanation unavailable due to JSON parsing error: ${parseErr.message}`, 'utf8');
+        explanationFilePath = stubPath;
+      } catch {}
+      
+      // Still try to return the quiz, but handle the JSON parsing in the final response
+      try {
+        return res.status(200).json({ quiz: safeJsonParse(quizJsonString), category: categoryName, modelUsed: modelForQuiz, explanation: { text: explanationText, file: explanationFilePath } });
+      } catch (finalErr) {
+        console.error('Final JSON parsing also failed:', finalErr.message);
+        return res.status(500).json({ message: `Quiz generation succeeded but JSON is invalid: ${finalErr.message}` });
+      }
+    }
+    
+    // If we get here, JSON parsing succeeded, try explanation generation
+    try {
       const quizTitle = quizObjPreview.title || 'study-topic';
       const now = new Date();
       const pad = (n) => n.toString().padStart(2,'0');
@@ -247,7 +299,7 @@ async function handler(req, res) {
       } catch {}
     }
 
-    res.status(200).json({ quiz: JSON.parse(quizJsonString), category: categoryName, modelUsed: modelForQuiz, explanation: { text: explanationText, file: explanationFilePath } });
+    res.status(200).json({ quiz: safeJsonParse(quizJsonString), category: categoryName, modelUsed: modelForQuiz, explanation: { text: explanationText, file: explanationFilePath } });
 
   } catch (error) {
     console.error(`[31mError in handler: ${error.message} [0m`);

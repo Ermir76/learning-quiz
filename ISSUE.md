@@ -1126,3 +1126,36 @@ Multiple statements mashed together without proper syntax
 [TO BE FILLED AFTER TESTING]
 
 ---
+
+## Issue Report: [AUTO-GENERATED - PLEASE EDIT TITLE]
+
+**ID:** 28
+**Status:** Open
+**Date Opened:** 2025-09-07
+
+---
+
+### Problem Description
+
+**Screenshot 1:** Very bad visibility
+
+![Screenshot 1](screenshots/issue-28-screenshot-1.png)
+
+**Environment:**
+- URL: http://localhost:3000/
+- User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko/20100101 Firefox/142.0
+- Timestamp: 2025-09-07T12:06:03.410Z
+
+### Investigation and Diagnosis
+
+[TO BE FILLED DURING INVESTIGATION]
+
+### Solution
+
+[TO BE FILLED WHEN RESOLVED]
+
+### Verification
+
+[TO BE FILLED AFTER TESTING]
+
+---
